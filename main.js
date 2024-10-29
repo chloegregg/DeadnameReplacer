@@ -5,11 +5,12 @@ const settings_ids = [
 
 // html tags to avoid changing
 const TAG_BLACKLIST = ["script", "style", "link"]
-// attributes to change
-const ATTRIBUTE_WHITELIST = ["value", "aria-label", "title"]
+// regex for attributes to avoid changing
+const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
 // html tags with the `value` property to change
 const INPUT_WHITELIST = ["input", "textarea"]
 
+const WORD_CHARS = "a-zA-Z"
 
 let bad = []
 let good = {first: "", last:"", middle: ""}
@@ -58,7 +59,7 @@ function addSubstitution(bad, good) {
                 replacement += "$" + (i+2)
             }
         }
-        return [new RegExp(`([^a-zA-Z]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "([^a-zA-Z]+)")}([^a-zA-Z]|$)`, flags), replacement]
+        return [new RegExp(`([^${WORD_CHARS}]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, `([^${WORD_CHARS}]+)`)}([^${WORD_CHARS}]|$)`, flags), replacement]
     }
     substitutions.push(createRegExpFor(bad.toLowerCase(), good.toLowerCase()))
     substitutions.push(createRegExpFor(bad.toUpperCase(), good.toUpperCase()))
@@ -71,7 +72,6 @@ function addSubstitution(bad, good) {
     }
     // any other case
     substitutions.push(createRegExpFor(bad, good, "gi"))
-    console.log(substitutions)
 }
 // remove all substitutions
 function clearSubstitutions() {
@@ -88,7 +88,6 @@ function fixText(text) {
 }
 // update settings
 function updateSettingsValue(key, value) {
-    console.log(`setting ${key} to ${JSON.stringify(value)}`)
     switch (key) {
         case "deadnames":
             bad = value
@@ -111,16 +110,22 @@ function fixElement(element) {
 
     // change attributes
     if (element.attributes !== undefined) {
-        ATTRIBUTE_WHITELIST.forEach(at => {
+        attrs: for (const at of Object.keys(element.attributes)) {
             if (element.attributes[at] === undefined) {
-                return
+                continue attrs
+            }
+            for (const attrRegex of ATTRIBUTE_BLACKLIST) {
+                if (at.match(attrRegex) !== null) {
+                    continue attrs
+                }
             }
             const fixed = fixText(element.attributes[at].value)
             if (fixed !== element.attributes[at].value) {
                 changed = true
                 element.attributes[at].value = fixed
             }
-        })
+
+        }
     }
     // change input values
     if (element.tagName && INPUT_WHITELIST.includes(element.tagName.toLowerCase())) {
