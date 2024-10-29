@@ -38,6 +38,9 @@ function generateSubstitutions(bad, good) {
 }
 // add a substitution
 function addSubstitution(bad, good) {
+    if (bad == good) {
+        return
+    }
     if (!bad.match(WORD_REGEX) || !good.match(WORD_REGEX)) {
         return
     }
@@ -80,7 +83,6 @@ function addSubstitution(bad, good) {
         settings.substitutions.push(createReplFor(titleCase(bad), titleCase(good)))
         // Single title case
         settings.substitutions.push(createReplFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
-        
     }
     // aNy oThEr cAsE
     settings.substitutions.push(createReplFor(bad, good, "gi"))

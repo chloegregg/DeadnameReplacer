@@ -27,7 +27,6 @@ function updateSettingsValue(key, value) {
             for (let i = 0; i < value.length; i++) {
                 substitutions.push([new RegExp(...value[i][0]), value[i][1]])
             }
-            console.log(substitutions)
             fixElement(document.body)
             break;
         default:
