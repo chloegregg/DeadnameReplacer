@@ -23,8 +23,10 @@ function generateSubstitutions() {
             if (bad[i].last && good.last) {
                 if (bad[i].middle && good.middle) {
                     addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
+                    addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
                 }
                 addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
+                addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
                 addSubstitution(bad[i].last, good.last)
             }
             addSubstitution(bad[i].first, good.first)
@@ -45,7 +47,18 @@ function addSubstitution(bad, good) {
         return title
     }
     function createRegExpFor(bad, good, flags = "g") {
-        return [new RegExp(`(\\W|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(\\W+)")}(\\W|$)`, flags), `$1${good}$${bad.split(" ").length+1}`]
+        let replacement = "$1"
+        const words = good.split(" ")
+        const badWordCount = bad.split(" ").length
+        for (let i = 0; i < words.length; i++) {
+            replacement += words[i]
+            if (i + 1 >= badWordCount) {
+                replacement += "$" + (badWordCount+1)
+            } else {
+                replacement += "$" + (i+2)
+            }
+        }
+        return [new RegExp(`(\\W|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(\\W+)")}(\\W|$)`, flags), replacement]
     }
     substitutions.push(createRegExpFor(bad.toLowerCase(), good.toLowerCase()))
     substitutions.push(createRegExpFor(bad.toUpperCase(), good.toUpperCase()))
@@ -58,6 +71,7 @@ function addSubstitution(bad, good) {
     }
     // any other case
     substitutions.push(createRegExpFor(bad, good, "gi"))
+    console.log(substitutions)
 }
 // remove all substitutions
 function clearSubstitutions() {
@@ -156,7 +170,7 @@ function fixElement(element) {
     window.addEventListener("load", () => {
         fixElement(document.body)
         clearInterval(initIntervalID)
-        // setInterval(()=>fixElement(document.body), 1000)
+        setInterval(()=>fixElement(document.body), 1000)
     })
     // observe changes in tree
     new MutationObserver(mutations => {
