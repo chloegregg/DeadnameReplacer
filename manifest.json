@@ -16,7 +16,8 @@
             ],
             "matches": [
                 "<all_urls>"
-            ]
+            ],
+            "all_frames": true
         }
     ],
     "action": {
