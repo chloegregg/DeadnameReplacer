@@ -1,8 +1,6 @@
 const settings_ids = [
-    "deadnames",
-    "chosenname"
+    "substitutions"
 ]
-
 // html tags to avoid changing
 const TAG_BLACKLIST = ["script", "style", "link"]
 // regex for attributes to avoid changing
@@ -10,76 +8,8 @@ const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
 // html tags with the `value` property to change
 const INPUT_WHITELIST = ["input", "textarea"]
 
-const WORD_CHARS = "a-zA-Z"
-const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
-
-let bad = []
-let good = {first: "", last:"", middle: ""}
 let substitutions = []
 
-// generate substitutions from all `bad` into `good`
-function generateSubstitutions() {
-    clearSubstitutions()
-    for (let i = 0; i < bad.length; i++) {
-        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
-        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
-        addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
-        addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
-        addSubstitution(bad[i].last, good.last)
-        addSubstitution(bad[i].first, good.first)
-    }
-}
-// add a substitution
-function addSubstitution(bad, good) {
-    if (!bad.match(WORD_REGEX) || !good.match(WORD_REGEX)) {
-        return
-    }
-    function titleCase(str) {
-        let title = ""
-        let lastWord = -1
-        for (const word of str.matchAll(WORD_REGEX)) {
-            title += str.slice(lastWord+1, word.index).toLowerCase()
-            title += str[word.index].toUpperCase()
-            lastWord = word.index
-        }
-        title += str.slice(lastWord+1).toLowerCase()
-        return title
-    }
-    function createRegExpFor(bad, good, flags = "g") {
-        let replacement = "$1"
-        const words = good.split(" ")
-        const badWordCount = bad.split(" ").length
-        for (let i = 0; i < words.length; i++) {
-            replacement += words[i]
-            if (i + 1 == words.length) {
-                replacement += "$" + (badWordCount+1)
-            } else if (i + 1 >= badWordCount) {
-                replacement += " "
-            } else {
-                replacement += "$" + (i+2)
-            }
-        }
-        for (let i = words.length; i < badWordCount.length; i++) {
-            replacement += "$" + (i+2)
-        }
-        return [new RegExp(`([^${WORD_CHARS}]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, `([^${WORD_CHARS}]+)`)}([^${WORD_CHARS}]|$)`, flags), replacement]
-    }
-    substitutions.push(createRegExpFor(bad.toLowerCase(), good.toLowerCase()))
-    substitutions.push(createRegExpFor(bad.toUpperCase(), good.toUpperCase()))
-    if (bad.length > 0 && good.length > 0) {
-        // Single title case
-        substitutions.push(createRegExpFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
-        // Title Case
-        substitutions.push(createRegExpFor(titleCase(bad), titleCase(good)))
-        
-    }
-    // any other case
-    substitutions.push(createRegExpFor(bad, good, "gi"))
-}
-// remove all substitutions
-function clearSubstitutions() {
-    substitutions = []
-}
 // replace text
 function fixText(text) {
     for (let i = 0; i < substitutions.length; i++) {
@@ -92,13 +22,13 @@ function fixText(text) {
 // update settings
 function updateSettingsValue(key, value) {
     switch (key) {
-        case "deadnames":
-            bad = value
-            generateSubstitutions()
-            break;
-        case "chosenname":
-            good = value
-            generateSubstitutions()
+        case "substitutions":
+            substitutions = []
+            for (let i = 0; i < value.length; i++) {
+                substitutions.push([new RegExp(...value[i][0]), value[i][1]])
+            }
+            console.log(substitutions)
+            fixElement(document.body)
             break;
         default:
             console.warn(`Unknown Setting "${key}"`)

@@ -1,8 +1,76 @@
-const settings = {deadnames: [], chosenname: {first: "", last:"", middle: ""}}
+const settings = {
+    deadnames: [], 
+    chosenname: {first: "", last:"", middle: ""},
+    substitutions: [],
+}
 const savedSettings = {}
 const deadnamesDiv = document.getElementById("deadnames")
 const chosennameDiv = document.getElementById("chosenname")
 
+const WORD_CHARS = "a-zA-Z"
+const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
+
+// generate substitutions from all `bad` into `good`
+function generateSubstitutions(bad, good) {
+    settings.substitutions = []
+    for (let i = 0; i < bad.length; i++) {
+        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
+        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
+        addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
+        addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
+        addSubstitution(bad[i].last, good.last)
+        addSubstitution(bad[i].first, good.first)
+    }
+}
+// add a substitution
+function addSubstitution(bad, good) {
+    if (!bad.match(WORD_REGEX) || !good.match(WORD_REGEX)) {
+        return
+    }
+    function titleCase(str) {
+        let title = ""
+        let lastWord = -1
+        for (const word of str.matchAll(WORD_REGEX)) {
+            title += str.slice(lastWord+1, word.index).toLowerCase()
+            title += str[word.index].toUpperCase()
+            lastWord = word.index
+        }
+        title += str.slice(lastWord+1).toLowerCase()
+        return title
+    }
+    function createReplFor(bad, good, flags = "g") {
+        let replacement = "$1"
+        const words = good.split(" ")
+        const badWordCount = bad.split(" ").length
+        for (let i = 0; i < words.length; i++) {
+            replacement += words[i]
+            if (i + 1 == words.length) {
+                replacement += "$" + (badWordCount+1)
+            } else if (i + 1 >= badWordCount) {
+                replacement += " "
+            } else {
+                replacement += "$" + (i+2)
+            }
+        }
+        for (let i = words.length; i < badWordCount.length; i++) {
+            replacement += "$" + (i+2)
+        }
+        return [[`([^${WORD_CHARS}]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, `([^${WORD_CHARS}]+)`)}([^${WORD_CHARS}]|$)`, flags], replacement]
+    }
+    // lower case
+    settings.substitutions.push(createReplFor(bad.toLowerCase(), good.toLowerCase()))
+    // UPPER CASE
+    settings.substitutions.push(createReplFor(bad.toUpperCase(), good.toUpperCase()))
+    if (bad.length > 0 && good.length > 0) {
+        // Title Case
+        settings.substitutions.push(createReplFor(titleCase(bad), titleCase(good)))
+        // Single title case
+        settings.substitutions.push(createReplFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
+        
+    }
+    // aNy oThEr cAsE
+    settings.substitutions.push(createReplFor(bad, good, "gi"))
+}
 async function loadSettings() {
     for (const setting of Object.keys(settings)){
         const value = (await chrome.storage.local.get(setting))[setting]
@@ -13,6 +81,7 @@ async function loadSettings() {
     }
 }
 function saveSettings() {
+    console.log(settings)
     for (const setting of Object.keys(settings)){
         if (settings[setting] !== savedSettings[setting]){
             savedSettings[setting] = copy(settings[setting])
@@ -68,6 +137,7 @@ function listenToNewDead(element, index) {
                 created = true
             }
             settings.deadnames[index][event.target.name] = event.target.value
+            generateSubstitutions(settings.deadnames, settings.chosenname)
         })
     }
 }
@@ -80,8 +150,10 @@ function main() {
             element.value = settings.chosenname[element.name]
             element.addEventListener("input", event => {
                 settings.chosenname[event.target.name] = event.target.value
+                generateSubstitutions(settings.deadnames, settings.chosenname)
             })
         })
+        generateSubstitutions(settings.deadnames, settings.chosenname)
     })
 }
 main()
