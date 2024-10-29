@@ -14,12 +14,26 @@ const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
 function generateSubstitutions(bad, good) {
     settings.substitutions = []
     for (let i = 0; i < bad.length; i++) {
-        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
-        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
-        addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
-        addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
-        addSubstitution(bad[i].last, good.last)
-        addSubstitution(bad[i].first, good.first)
+        const replName = {first: good.first, middle: good.middle, last: good.last}
+        if (!replName.first) {
+            replName.first = bad[i].first
+        }
+        if (!replName.middle) {
+            replName.middle = bad[i].middle
+        }
+        if (!replName.last) {
+            replName.last = bad[i].last
+        }
+        if (bad[i].last.match(WORD_REGEX) && replName.last.match(WORD_REGEX)) {
+            if (bad[i].middle.match(WORD_REGEX) && replName.middle.match(WORD_REGEX)) {
+                addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [replName.first, replName.middle, replName.last].join(" "))
+                addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [replName.first, replName.middle, replName.last].join(""))
+            }
+            addSubstitution([bad[i].first, bad[i].last].join(" "), [replName.first, replName.last].join(" "))
+            addSubstitution([bad[i].first, bad[i].last].join(""), [replName.first, replName.last].join(""))
+            addSubstitution(bad[i].last, replName.last)
+        }
+        addSubstitution(bad[i].first, replName.first)
     }
 }
 // add a substitution
@@ -81,7 +95,6 @@ async function loadSettings() {
     }
 }
 function saveSettings() {
-    console.log(settings)
     for (const setting of Object.keys(settings)){
         if (settings[setting] !== savedSettings[setting]){
             savedSettings[setting] = copy(settings[setting])
