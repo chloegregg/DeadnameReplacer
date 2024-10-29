@@ -1,12 +1,28 @@
 <html>
 <head>
-    <script src="popup.js"></script>
+    <script src="popup.js" defer></script>
 </head>
 <body>
-    <p>from</p>
-    <input id="from" type="text">
-    <p>to</p>
-    <input id="to" type="text">
-    <button id="save">save</button>    
+    <h3>Chosen Name: </h3>
+    <div id="chosenname">
+        <div>
+            <label for="first">First Name: </label>
+            <input name="first" type="text">
+        </div>
+        <div>
+            <label for="middle">Middle Name(s): </label>
+            <input name="middle" type="text">
+        </div>
+        <div>
+            <label for="last">Last Name: </label>
+            <input name="last" type="text">
+        </div>
+    </div>
+    <h3>Deadnames: </h3>
+    <details>
+        <summary>Click to reveal</summary>
+        <div id="deadnames"></div>
+    </details>
+    <button id="save">save</button>  
 </body>
 </html>

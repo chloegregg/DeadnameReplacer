@@ -1,6 +1,6 @@
 const settings_ids = [
-    "from",
-    "to"
+    "deadnames",
+    "chosenname"
 ]
 
 // html tags to avoid changing
@@ -12,14 +12,23 @@ const INPUT_WHITELIST = ["input", "textarea"]
 
 
 let bad = []
-let good = ""
+let good = {first: "", last:"", middle: ""}
 let substitutions = []
 
 // generate substitutions from all `bad` into `good`
 function generateSubstitutions() {
     clearSubstitutions()
     for (let i = 0; i < bad.length; i++) {
-        addSubstitution(bad[i], good)
+        if (bad[i].first && good.first) {
+            if (bad[i].last && good.last) {
+                if (bad[i].middle && good.middle) {
+                    addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
+                }
+                addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
+                addSubstitution(bad[i].last, good.last)
+            }
+            addSubstitution(bad[i].first, good.first)
+        }
     }
 }
 // add a substitution
@@ -35,23 +44,20 @@ function addSubstitution(bad, good) {
         title += str.slice(lastWord+1).toLowerCase()
         return title
     }
-    function createRegExpFor(str, flags = "g") {
-        return new RegExp(`(\\W|^)${str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\W|$)`, flags)
+    function createRegExpFor(bad, good, flags = "g") {
+        return [new RegExp(`(\\W|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(\\W+)")}(\\W|$)`, flags), `$1${good}$${bad.split(" ").length+1}`]
     }
-    function replacement(str) {
-        return `$1${str}$2`
-    }
-    substitutions.push([createRegExpFor(bad.toLowerCase()), replacement(good.toLowerCase())])
-    substitutions.push([createRegExpFor(bad.toUpperCase()), replacement(good.toUpperCase())])
+    substitutions.push(createRegExpFor(bad.toLowerCase(), good.toLowerCase()))
+    substitutions.push(createRegExpFor(bad.toUpperCase(), good.toUpperCase()))
     if (bad.length > 0 && good.length > 0) {
         // Single title case
-        substitutions.push([createRegExpFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase()), replacement(good[0].toUpperCase()+good.slice(1).toLowerCase())])
+        substitutions.push(createRegExpFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
         // Title Case
-        substitutions.push([createRegExpFor(titleCase(bad)), replacement(titleCase(good))])
+        substitutions.push(createRegExpFor(titleCase(bad), titleCase(good)))
         
     }
     // any other case
-    substitutions.push([createRegExpFor(bad, "gi"), replacement(good)])
+    substitutions.push(createRegExpFor(bad, good, "gi"))
 }
 // remove all substitutions
 function clearSubstitutions() {
@@ -68,13 +74,13 @@ function fixText(text) {
 }
 // update settings
 function updateSettingsValue(key, value) {
-    console.log(`setting ${key} to ${value}`)
+    console.log(`setting ${key} to ${JSON.stringify(value)}`)
     switch (key) {
-        case "from":
-            bad = [value]
+        case "deadnames":
+            bad = value
             generateSubstitutions()
             break;
-        case "to":
+        case "chosenname":
             good = value
             generateSubstitutions()
             break;
@@ -147,7 +153,7 @@ function fixElement(element) {
     })
     // fix anything that appeared before the script started
     const initIntervalID = setInterval(()=>fixElement(document.body))
-    window.addEventListener("onload", () => {
+    window.addEventListener("load", () => {
         fixElement(document.body)
         clearInterval(initIntervalID)
         // setInterval(()=>fixElement(document.body), 1000)

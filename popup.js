@@ -1,33 +1,84 @@
-const settings_ids = [
-    "from",
-    "to"
-]
+const settings = {deadnames: [], chosenname: {first: "", last:"", middle: ""}}
+const savedSettings = {}
+const deadnamesDiv = document.getElementById("deadnames")
+const chosennameDiv = document.getElementById("chosenname")
 
-var settings = {}
-
-function onInit(){
-
-    document.getElementById("save").onclick = saveSettings
-    for (const setting of settings_ids){
-        chrome.storage.local.get(setting, (result) => {
-            document.getElementById(setting).value = result[setting]
-            settings[setting] = result[setting]
-        })
+async function loadSettings() {
+    for (const setting of Object.keys(settings)){
+        settings[setting] = (await chrome.storage.local.get(setting))[setting]
+        savedSettings[setting] = copy(settings[setting])
     }
 }
-
-function saveSettings(){
-    console.log("AAAAAA")
-    for (const setting of settings_ids){
-        const setting_value = document.getElementById(setting).value
-        if (setting_value != settings[setting]){
-            console.log("passed condition")
-            settings[setting] = setting_value
-            var setting_dict = {}
-            setting_dict[setting]=setting_value
-            chrome.storage.local.set(setting_dict)
+function saveSettings() {
+    for (const setting of Object.keys(settings)){
+        if (settings[setting] !== savedSettings[setting]){
+            savedSettings[setting] = copy(settings[setting])
+            chrome.storage.local.set({[setting]: settings[setting]})
         }
     }
 }
 
-document.addEventListener('DOMContentLoaded', onInit, false);
+function copy(json) {
+    return JSON.parse(JSON.stringify(json))
+}
+
+function createNewDead(index = 0) {
+    const temp = document.createElement("div")
+    temp.innerHTML += `<div>
+            <div>
+                <label for="first">First Name: </label>
+                <input name="first" type="text">
+            </div>
+            <div>
+                <label for="middle">Middle Name(s): </label>
+                <input name="middle" type="text">
+            </div>
+            <div>
+                <label for="last">Last Name: </label>
+                <input name="last" type="text">
+            </div>
+        </div>`
+    deadnamesDiv.appendChild(temp.firstChild)
+    temp.remove()
+    if (settings.deadnames.length > index) {
+        if (settings.deadnames[index].first) {
+            deadnamesDiv.lastChild.querySelectorAll("input").forEach(element => {
+                element.value = settings.deadnames[index][element.name]
+            })
+        }
+    } else {
+        settings.deadnames.push({first: "", last:"", middle: ""})
+    }
+    listenToNewDead(deadnamesDiv.lastChild, index)
+}
+
+function listenToNewDead(element, index) {
+    let created = false;
+    if (settings.deadnames.length > index + 1 && settings.deadnames[index].first) {
+        createNewDead(index + 1)
+        created = true
+    }
+    for (const inp of element.getElementsByTagName("input")) {
+        inp.addEventListener("input", event => {
+            if (!created) {
+                createNewDead(index + 1)
+                created = true
+            }
+            settings.deadnames[index][event.target.name] = event.target.value
+        })
+    }
+}
+
+function main() {
+    document.getElementById("save").addEventListener("click", saveSettings)
+    loadSettings().then(() => {
+        createNewDead()
+        chosennameDiv.querySelectorAll("input").forEach(element => {
+            element.value = settings.chosenname[element.name]
+            element.addEventListener("input", event => {
+                settings.chosenname[event.target.name] = event.target.value
+            })
+        })
+    })
+}
+main()
