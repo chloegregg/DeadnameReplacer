@@ -11,6 +11,7 @@ const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
 const INPUT_WHITELIST = ["input", "textarea"]
 
 const WORD_CHARS = "a-zA-Z"
+const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
 
 let bad = []
 let good = {first: "", last:"", middle: ""}
@@ -20,26 +21,24 @@ let substitutions = []
 function generateSubstitutions() {
     clearSubstitutions()
     for (let i = 0; i < bad.length; i++) {
-        if (bad[i].first && good.first) {
-            if (bad[i].last && good.last) {
-                if (bad[i].middle && good.middle) {
-                    addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
-                    addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
-                }
-                addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
-                addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
-                addSubstitution(bad[i].last, good.last)
-            }
-            addSubstitution(bad[i].first, good.first)
-        }
+        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [good.first, good.middle, good.last].join(" "))
+        addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [good.first, good.middle, good.last].join(""))
+        addSubstitution([bad[i].first, bad[i].last].join(" "), [good.first, good.last].join(" "))
+        addSubstitution([bad[i].first, bad[i].last].join(""), [good.first, good.last].join(""))
+        addSubstitution(bad[i].last, good.last)
+        addSubstitution(bad[i].first, good.first)
     }
+    console.log(substitutions)
 }
 // add a substitution
 function addSubstitution(bad, good) {
+    if (!bad.match(WORD_REGEX) || !good.match(WORD_REGEX)) {
+        return
+    }
     function titleCase(str) {
         let title = ""
         let lastWord = -1
-        for (const word of str.matchAll(/[a-zA-Z]+/g)) {
+        for (const word of str.matchAll(WORD_REGEX)) {
             title += str.slice(lastWord+1, word.index).toLowerCase()
             title += str[word.index].toUpperCase()
             lastWord = word.index
@@ -53,11 +52,16 @@ function addSubstitution(bad, good) {
         const badWordCount = bad.split(" ").length
         for (let i = 0; i < words.length; i++) {
             replacement += words[i]
-            if (i + 1 >= badWordCount) {
+            if (i + 1 == words.length) {
                 replacement += "$" + (badWordCount+1)
+            } else if (i + 1 >= badWordCount) {
+                replacement += " "
             } else {
                 replacement += "$" + (i+2)
             }
+        }
+        for (let i = words.length; i < badWordCount.length; i++) {
+            replacement += "$" + (i+2)
         }
         return [new RegExp(`([^${WORD_CHARS}]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, `([^${WORD_CHARS}]+)`)}([^${WORD_CHARS}]|$)`, flags), replacement]
     }
