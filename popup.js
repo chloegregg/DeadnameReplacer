@@ -5,8 +5,11 @@ const chosennameDiv = document.getElementById("chosenname")
 
 async function loadSettings() {
     for (const setting of Object.keys(settings)){
-        settings[setting] = (await chrome.storage.local.get(setting))[setting]
-        savedSettings[setting] = copy(settings[setting])
+        const value = (await chrome.storage.local.get(setting))[setting]
+        if (value !== undefined) {
+            settings[setting] = value
+            savedSettings[setting] = copy(value)
+        }
     }
 }
 function saveSettings() {
