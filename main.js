@@ -38,7 +38,7 @@ function addSubstitution(bad, good) {
     function titleCase(str) {
         let title = ""
         let lastWord = -1
-        for (const word of str.matchAll(/\w+/g)) {
+        for (const word of str.matchAll(/[a-zA-Z]+/g)) {
             title += str.slice(lastWord+1, word.index).toLowerCase()
             title += str[word.index].toUpperCase()
             lastWord = word.index
@@ -58,7 +58,7 @@ function addSubstitution(bad, good) {
                 replacement += "$" + (i+2)
             }
         }
-        return [new RegExp(`(\\W|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(\\W+)")}(\\W|$)`, flags), replacement]
+        return [new RegExp(`([^a-zA-Z]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "([^a-zA-Z]+)")}([^a-zA-Z]|$)`, flags), replacement]
     }
     substitutions.push(createRegExpFor(bad.toLowerCase(), good.toLowerCase()))
     substitutions.push(createRegExpFor(bad.toUpperCase(), good.toUpperCase()))
