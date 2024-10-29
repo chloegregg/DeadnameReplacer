@@ -28,7 +28,6 @@ function generateSubstitutions() {
         addSubstitution(bad[i].last, good.last)
         addSubstitution(bad[i].first, good.first)
     }
-    console.log(substitutions)
 }
 // add a substitution
 function addSubstitution(bad, good) {
