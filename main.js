@@ -35,7 +35,7 @@ function updateSettingsValue(key, value) {
 }
 
 function fixElement(element) {
-    if (element.tagName && TAG_BLACKLIST.includes(element.tagName.toLowerCase())) {
+    if (element === null || (element.tagName && TAG_BLACKLIST.includes(element.tagName.toLowerCase()))) {
         return false
     }
     let changed = false
