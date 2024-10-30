@@ -172,8 +172,8 @@ function fixDocument() {
         mutations.forEach(function (mutation) {
             if (fixElement(mutation.target)) {
                 // updated element
-                saveStorage()
             }
+            saveStorage()
         })
     }).observe(document.body, {
         childList: true,
@@ -187,8 +187,8 @@ function fixDocument() {
             mutations.forEach((mutation) => {
                 if (fixElement(mutation.target)) {
                     // updated element
-                    saveStorage()
                 }
+                saveStorage()
             })
         }).observe(document.querySelector("title"), {childList: true})
     }

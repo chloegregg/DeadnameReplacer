@@ -142,6 +142,11 @@ function main() {
         if (info.reason === chrome.runtime.OnInstalledReason.INSTALL) {
             chrome.tabs.create({url: chrome.runtime.getURL("setup.html")})
         }
+        chrome.contextMenus.create({
+            title: "Register Deadname",
+            contexts: ["selection"],
+            id: "deadname-remover"
+        })
     })
     loadStorage().then(() => {
         chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -168,11 +173,6 @@ function main() {
             storageEvent.update("deadnames")
             saveStorage()
         }
-    })
-    chrome.contextMenus.create({
-        title: "Register Deadname",
-        contexts: ["selection"],
-        id: "deadname-remover"
     })
     chrome.contextMenus.onClicked.addListener(info => {
         if (info.menuItemId == "deadname-remover") {
