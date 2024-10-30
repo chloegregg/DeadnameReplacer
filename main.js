@@ -90,6 +90,11 @@ function fixElement(element) {
 
 // init code
 (function () {
+    if (document.body === null) {
+        // iframe from another origin or something
+        return
+    }
+
     // load settings
     for (const key of settings_ids) {
         chrome.storage.local.get(key, result => {
