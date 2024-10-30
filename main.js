@@ -106,6 +106,7 @@ function fixElement(element) {
     const initIntervalID = setInterval(()=>fixElement(document.body))
     window.addEventListener("load", () => {
         fixElement(document.body)
+        fixElement(document.querySelector('title'))
         clearInterval(initIntervalID)
         setInterval(()=>fixElement(document.body), 1000)
     })
@@ -122,6 +123,11 @@ function fixElement(element) {
         subtree: true,
         characterData: true
     })
+    new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            fixElement(mutation.target)
+        })
+    }).observe(document.querySelector('title'), {childList:true})
 })()
 
 // // https://stackoverflow.com/a/5379408
