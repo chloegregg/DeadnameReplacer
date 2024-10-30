@@ -3,6 +3,7 @@ const storage = {
     deadnames: [], 
     chosenname: {first: "", last:"", middle: ""},
     substitutions: [],
+    count: 0,
 }
 const storageEvent = {
     update(property) {
@@ -26,6 +27,7 @@ const storageEvent = {
         this._listeners[property].push(callback)
     },
     _listeners: {},
+    loaded: false
 }
 const deadnamesDiv = document.getElementById("deadnames")
 const chosennameDiv = document.getElementById("chosenname")
@@ -37,10 +39,13 @@ function loadStorage() {
         for (const key of Object.keys(storage)) {
             storageEvent.update(key)
         }
+        storageEvent.loaded = true
     })
 }
 function saveStorage() {
-    chrome.storage.local.set(storage)
+    if (storageEvent.loaded) {
+        chrome.storage.local.set(storage)
+    }
 }
 function createNewDead(index = 0) {
     const temp = document.createElement("div")

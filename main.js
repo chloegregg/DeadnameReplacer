@@ -3,6 +3,7 @@ const storage = {
     deadnames: [], 
     chosenname: {first: "", last:"", middle: ""},
     substitutions: [],
+    count: 0,
 }
 const storageEvent = {
     update(property) {
@@ -26,6 +27,7 @@ const storageEvent = {
         this._listeners[property].push(callback)
     },
     _listeners: {},
+    loaded: false
 }
 
 function loadStorage() {
@@ -34,10 +36,13 @@ function loadStorage() {
         for (const key of Object.keys(storage)) {
             storageEvent.update(key)
         }
+        storageEvent.loaded = true
     })
 }
 function saveStorage() {
-    chrome.storage.local.set(storage)
+    if (storageEvent.loaded) {
+        chrome.storage.local.set(storage)
+    }
 }
 // html tags to avoid changing
 const TAG_BLACKLIST = ["script", "style", "link"]
@@ -47,14 +52,28 @@ const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
 const INPUT_WHITELIST = ["input", "textarea"]
 
 let regexedSubs = []
+let localCount = 0
+
+function updateCount() {
+    if (!storageEvent.loaded) {
+        return
+    }
+    if (localCount > 0) {
+        storage.count += localCount
+        localCount = 0
+    }
+}
 
 // replace text
 function fixText(text) {
     for (let i = 0; i < regexedSubs.length; i++) {
-        if (text.match(regexedSubs[i][0]) !== null) {
+        const matches = text.matchAll(regexedSubs[i][0]).toArray().length
+        if (matches > 0) {
             text = text.replace(regexedSubs[i][0], regexedSubs[i][1])
         }
+        localCount += matches
     }
+    updateCount()
     return text
 }
 
@@ -111,6 +130,12 @@ function fixElement(element) {
     return changed
 }
 
+function fixDocument() {
+    fixElement(document.body)
+    fixElement(document.querySelector('title'))
+    saveStorage()
+}
+
 // init code
 (function () {
     if (document.body === null) {
@@ -133,19 +158,21 @@ function fixElement(element) {
         }
         fixElement(document.body)
     })
+    storageEvent.addListener("count", updateCount)
     // fix anything that appeared before the script started
-    const initIntervalID = setInterval(()=>fixElement(document.body))
+    fixDocument()
+    const initIntervalID = setInterval(fixDocument)
     window.addEventListener("load", () => {
-        fixElement(document.body)
-        fixElement(document.querySelector('title'))
         clearInterval(initIntervalID)
-        setInterval(()=>fixElement(document.body), 1000)
+        fixDocument()
+        // setInterval(() => fixElement(document.body), 1000)
     })
     // observe changes in tree
     new MutationObserver(mutations => {
         mutations.forEach(function (mutation) {
             if (fixElement(mutation.target)) {
                 // updated element
+                saveStorage()
             }
         })
     }).observe(document.body, {
@@ -158,7 +185,10 @@ function fixElement(element) {
     if (document.querySelector("title")) {
         new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
-                fixElement(mutation.target)
+                if (fixElement(mutation.target)) {
+                    // updated element
+                    saveStorage()
+                }
             })
         }).observe(document.querySelector("title"), {childList: true})
     }
