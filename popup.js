@@ -50,15 +50,15 @@ function saveStorage() {
 function createNewDead(index = 0) {
     const temp = document.createElement("div")
     temp.innerHTML += `<div class="deadname">
-            <div>
+            <div class="namediv">
                 <label for="first">First Name: </label>
                 <input name="first" type="text">
             </div>
-            <div>
+            <div class="namediv">
                 <label for="middle">Middle Name(s): </label>
                 <input name="middle" type="text">
             </div>
-            <div>
+            <div class="namediv">
                 <label for="last">Last Name: </label>
                 <input name="last" type="text">
             </div>
