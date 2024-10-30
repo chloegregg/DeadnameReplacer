@@ -65,11 +65,11 @@ function updateCount() {
 }
 
 // replace text
-function fixText(text) {
-    for (let i = 0; i < regexedSubs.length; i++) {
-        const matches = text.matchAll(regexedSubs[i][0]).toArray().length
+function fixText(text, substitutions = regexedSubs) {
+    for (let i = 0; i < substitutions.length; i++) {
+        const matches = text.matchAll(substitutions[i][0]).toArray().length
         if (matches > 0) {
-            text = text.replace(regexedSubs[i][0], regexedSubs[i][1])
+            text = text.replace(substitutions[i][0], substitutions[i][1])
         }
         localCount += matches
     }
@@ -77,10 +77,34 @@ function fixText(text) {
     return text
 }
 
-function fixElement(element) {
+function fixElement(element, substitutions = regexedSubs) {
     if (element === null || (element.tagName && TAG_BLACKLIST.includes(element.tagName.toLowerCase()))) {
         return false
     }
+    const html = element.innerHTML
+    if (!html) {
+        return
+    }
+    let containsInput = false
+    for (const tag of INPUT_WHITELIST) {
+        if (html.includes("<" + tag)) {
+            containsInput = true
+            break
+        }
+    }
+    if (!containsInput) {
+        substitutions = [...substitutions]
+        for (let i = 4; i < substitutions.length; i += 5) {
+            if (html.match(substitutions[i][0]) === null) {
+                substitutions.splice(i-4, 5)
+                i -= 5
+            }
+        }
+        if (substitutions.length == 0) {
+            return
+        }
+    }
+
     let changed = false
 
     // change attributes
@@ -115,14 +139,14 @@ function fixElement(element) {
     while (child) {
         switch (child.nodeType) {
             case Node.TEXT_NODE:
-                const fixed = fixText(child.data)
+                const fixed = fixText(child.data, substitutions)
                 if (fixed !== child.data) {
                     changed = true
                     child.data = fixed
                 }
                 break
             default:
-                changed ||= this.fixElement(child)
+                changed ||= this.fixElement(child, substitutions)
                 break
         }
         child = child.nextSibling
