@@ -1,6 +1,44 @@
-const settings_ids = [
-    "substitutions"
-]
+
+const storage = {
+    deadnames: [], 
+    chosenname: {first: "", last:"", middle: ""},
+    substitutions: [],
+}
+const storageEvent = {
+    update(property) {
+        if (this._listeners[property] === undefined) {
+            return
+        }
+        for (const callback of this._listeners[property]) {
+            callback()
+        }
+    },
+    addListener(property, callback) {
+        if (property instanceof Array) {
+            property.forEach(p => {
+                this.addListener(p, callback)
+            })
+            return
+        }
+        if (this._listeners[property] === undefined) {
+            this._listeners[property] = []
+        }
+        this._listeners[property].push(callback)
+    },
+    _listeners: {},
+}
+
+function loadStorage() {
+    return chrome.storage.local.get().then(value => {
+        Object.assign(storage, value ?? {})
+        for (const key of Object.keys(storage)) {
+            storageEvent.update(key)
+        }
+    })
+}
+function saveStorage() {
+    chrome.storage.local.set(storage)
+}
 // html tags to avoid changing
 const TAG_BLACKLIST = ["script", "style", "link"]
 // regex for attributes to avoid changing
@@ -8,30 +46,16 @@ const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
 // html tags with the `value` property to change
 const INPUT_WHITELIST = ["input", "textarea"]
 
-let substitutions = []
+let regexedSubs = []
 
 // replace text
 function fixText(text) {
-    for (let i = 0; i < substitutions.length; i++) {
-        if (text.match(substitutions[i][0]) !== null) {
-            text = text.replace(substitutions[i][0], substitutions[i][1])
+    for (let i = 0; i < regexedSubs.length; i++) {
+        if (text.match(regexedSubs[i][0]) !== null) {
+            text = text.replace(regexedSubs[i][0], regexedSubs[i][1])
         }
     }
     return text
-}
-// update settings
-function updateSettingsValue(key, value) {
-    switch (key) {
-        case "substitutions":
-            substitutions = []
-            for (let i = 0; i < value.length; i++) {
-                substitutions.push([new RegExp(...value[i][0]), value[i][1]])
-            }
-            fixElement(document.body)
-            break;
-        default:
-            console.warn(`Unknown Setting "${key}"`)
-    }
 }
 
 function fixElement(element) {
@@ -56,7 +80,6 @@ function fixElement(element) {
                 changed = true
                 element.attributes[at].value = fixed
             }
-
         }
     }
     // change input values
@@ -95,17 +118,20 @@ function fixElement(element) {
         return
     }
 
-    // load settings
-    for (const key of settings_ids) {
-        chrome.storage.local.get(key, result => {
-            updateSettingsValue(key, result[key])
+    loadStorage().then(() => {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+                storage[key] = newValue
+                storageEvent.update(key)
+            }
         })
-    }
-    // listen for setting changes
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-            updateSettingsValue(key, newValue)
+    })
+    storageEvent.addListener("substitutions", () => {
+        regexedSubs = []
+        for (let i = 0; i < storage.substitutions.length; i++) {
+            regexedSubs.push([new RegExp(...storage.substitutions[i][0]), storage.substitutions[i][1]])
         }
+        fixElement(document.body)
     })
     // fix anything that appeared before the script started
     const initIntervalID = setInterval(()=>fixElement(document.body))
@@ -128,28 +154,12 @@ function fixElement(element) {
         subtree: true,
         characterData: true
     })
-    new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            fixElement(mutation.target)
-        })
-    }).observe(document.querySelector('title'), {childList:true})
+    // observe title
+    if (document.querySelector("title")) {
+        new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                fixElement(mutation.target)
+            })
+        }).observe(document.querySelector("title"), {childList: true})
+    }
 })()
-
-// // https://stackoverflow.com/a/5379408
-// function getSelectionText() {
-//     let text = "";
-//     const activeEl = document.activeElement;
-//     const activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
-
-//     if (
-//         (activeElTagName == "textarea") || (activeElTagName == "input" &&
-//             /^(?:text|search|password|tel|url)$/i.test(activeEl.type)) &&
-//         (typeof activeEl.selectionStart == "number")
-//     ) {
-//         text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
-//     } else if (window.getSelection) {
-//         text = window.getSelection().toString();
-//     }
-
-//     return text;
-// }

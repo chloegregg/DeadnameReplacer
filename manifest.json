@@ -23,8 +23,8 @@
     "action": {
         "default_popup": "popup.html"
     },
-    "permissions":[
-        "storage"
+    "permissions": [
+        "storage", "contextMenus"
     ],
     "background": {
         "service_worker": "background.js"
