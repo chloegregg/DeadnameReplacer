@@ -80,18 +80,17 @@ function fixElement(element, substitutions = regexedSubs) {
         return false
     }
     const html = element.innerHTML
-    if (!html) {
-        return
-    }
-    substitutions = [...substitutions]
-    for (let i = 4; i < substitutions.length; i += 5) {
-        if (html.match(substitutions[i][0]) === null) {
-            substitutions.splice(i-4, 5)
-            i -= 5
+    if (html) {
+        substitutions = [...substitutions]
+        for (let i = 4; i < substitutions.length; i += 5) {
+            if (html.match(substitutions[i][0]) === null) {
+                substitutions.splice(i-4, 5)
+                i -= 5
+            }
         }
-    }
-    if (substitutions.length == 0) {
-        return
+        if (substitutions.length == 0) {
+            return
+        }
     }
 
     let changed = false
