@@ -50,6 +50,10 @@ function saveStorage() {
 function createNewDead(index = 0) {
     const temp = document.createElement("div")
     temp.innerHTML += `<div class="deadname">
+            <div>
+                <h3>Dead #${index+1} <span class="remove">(clear)</span></h3>
+                
+            </div>
             <div class="namediv">
                 <label for="first">First Name: </label>
                 <input name="first" type="text">
@@ -63,8 +67,10 @@ function createNewDead(index = 0) {
                 <input name="last" type="text">
             </div>
         </div>`
-    deadnamesDiv.appendChild(temp.firstChild)
+    const div = temp.firstChild
     temp.remove()
+    div.querySelector(".remove").onclick = () => div.querySelectorAll("input").forEach(i => i.value="")
+    deadnamesDiv.appendChild(div)
     if (storage.deadnames.length > index) {
         if (storage.deadnames[index].first) {
             deadnamesDiv.lastChild.querySelectorAll("input").forEach(element => {

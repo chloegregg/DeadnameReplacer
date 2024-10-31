@@ -33,6 +33,7 @@ input{
 .namediv > input{
     color: white;
     padding:4px;
+    width: 50%;
 }
 button{
     margin-top: 30px;
@@ -49,4 +50,13 @@ button{
 button:hover{
     color: rgb(169, 220, 169);
     background-color: rgb(132, 157, 137);
+}
+.remove{
+    text-decoration: underline;
+    color: rgb(199, 199, 199);
+    cursor: pointer;
+    transition: 0.15s;
+}
+.remove:hover{
+    color: rgb(170, 170, 170);
 }
