@@ -48,8 +48,6 @@ function saveStorage() {
 const TAG_BLACKLIST = ["script", "style", "link"]
 // regex for attributes to avoid changing
 const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
-// html tags with the `value` property to change
-const INPUT_WHITELIST = ["input", "textarea"]
 
 let regexedSubs = []
 let localCount = 0
@@ -85,24 +83,15 @@ function fixElement(element, substitutions = regexedSubs) {
     if (!html) {
         return
     }
-    let containsInput = false
-    for (const tag of INPUT_WHITELIST) {
-        if (html.includes("<" + tag)) {
-            containsInput = true
-            break
+    substitutions = [...substitutions]
+    for (let i = 4; i < substitutions.length; i += 5) {
+        if (html.match(substitutions[i][0]) === null) {
+            substitutions.splice(i-4, 5)
+            i -= 5
         }
     }
-    if (!containsInput) {
-        substitutions = [...substitutions]
-        for (let i = 4; i < substitutions.length; i += 5) {
-            if (html.match(substitutions[i][0]) === null) {
-                substitutions.splice(i-4, 5)
-                i -= 5
-            }
-        }
-        if (substitutions.length == 0) {
-            return
-        }
+    if (substitutions.length == 0) {
+        return
     }
 
     let changed = false
@@ -123,14 +112,6 @@ function fixElement(element, substitutions = regexedSubs) {
                 changed = true
                 element.attributes[at].value = fixed
             }
-        }
-    }
-    // change input values
-    if (element.tagName && INPUT_WHITELIST.includes(element.tagName.toLowerCase())) {
-        const fixed = fixText(element.value)
-        if (fixed !== element.value) {
-            changed = true
-            element.value = fixed
         }
     }
 
