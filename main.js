@@ -48,6 +48,8 @@ function saveStorage() {
 const TAG_BLACKLIST = ["script", "style", "link"]
 // regex for attributes to avoid changing
 const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
+// html tags with the `value` property to change
+const INPUT_WHITELIST = ["input", "textarea"]
 // substitutions after creating actual RegExp objects
 let regexedSubs = []
 // keeps track of the counter, before the link to storage is made, so we don't lose any
@@ -81,7 +83,29 @@ function fixElement(element, substitutions = regexedSubs) {
         return false
     }
     const html = element.innerHTML
-    if (html) {
+    if (!html) {
+        return
+    }
+    let changed = false
+    let containsInput = false
+    if (storage.changeInputs) {
+        for (const tag of INPUT_WHITELIST) {
+            if (html.includes("<" + tag)) {
+                containsInput = true
+                break
+            }
+        }
+        // change input values
+        if (element.tagName && INPUT_WHITELIST.includes(element.tagName.toLowerCase())) {
+            console.log("changing ", element.tagName)
+            const fixed = fixText(element.value)
+            if (fixed !== element.value) {
+                changed = true
+                element.value = fixed
+            }
+        }
+    }
+    if (!(storage.changeInputs && containsInput)) {
         substitutions = [...substitutions]
         for (let i = 4; i < substitutions.length; i += 5) {
             if (html.match(substitutions[i][0]) === null) {
@@ -93,8 +117,6 @@ function fixElement(element, substitutions = regexedSubs) {
             return
         }
     }
-
-    let changed = false
 
     // change attributes
     if (element.attributes !== undefined) {
