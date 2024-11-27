@@ -69,7 +69,10 @@ function createNewDead(index = 0) {
         </div>`
     const div = temp.firstChild
     temp.remove()
-    div.querySelector(".remove").onclick = () => div.querySelectorAll("input").forEach(i => i.value="")
+    div.querySelector(".remove").onclick = () => div.querySelectorAll("input").forEach(i => {
+        i.value = ""
+        storage.deadnames[index][i.name] = ""
+    })
     deadnamesDiv.appendChild(div)
     if (storage.deadnames.length > index) {
         if (storage.deadnames[index].first) {
@@ -115,9 +118,7 @@ function loadNames() {
 
 function main() {
     document.getElementById("save").addEventListener("click", saveStorage)
-    loadStorage().then(() => {
-        loadNames()
-    })
+    loadStorage().then(loadNames)
     chrome.storage.onChanged.addListener((changes, namespace) => {
         for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
             storage[key] = newValue

@@ -30,7 +30,8 @@ const storageEvent = {
     loaded: false
 }
 
-const WORD_CHARS = "a-zA-Z"
+// https://regex101.com/r/kGIVxi/1
+const WORD_CHARS = "a-zA-Z\u00C0-\u024F\u1E00-\u1EFF"
 const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
 
 function loadStorage() {
@@ -124,8 +125,8 @@ function addSubstitution(bad, good) {
         // Single title case
         storage.substitutions.push(createReplFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
     }
-    // aNy oThEr cAsE
-    storage.substitutions.push(createReplFor(bad, good, "gi"))
+    // aNy oThEr cAsE (gets replaced with Title Case now)
+    storage.substitutions.push(createReplFor(bad, titleCase(good), "gi"))
 }
 function parseAndAddDeadname(text) {
     const names = text.matchAll(WORD_REGEX).map(match => match[0]).toArray()

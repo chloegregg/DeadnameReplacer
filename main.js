@@ -48,8 +48,9 @@ function saveStorage() {
 const TAG_BLACKLIST = ["script", "style", "link"]
 // regex for attributes to avoid changing
 const ATTRIBUTE_BLACKLIST = [/on\w+/, /style/, /class/, /href/, /src/, /id/]
-
+// substitutions after creating actual RegExp objects
 let regexedSubs = []
+// keeps track of the counter, before the link to storage is made, so we don't lose any
 let localCount = 0
 
 function updateCount() {
@@ -160,23 +161,23 @@ function fixDocument() {
         for (let i = 0; i < storage.substitutions.length; i++) {
             regexedSubs.push([new RegExp(...storage.substitutions[i][0]), storage.substitutions[i][1]])
         }
-        fixElement(document.body)
+        fixDocument()
     })
     storageEvent.addListener("count", updateCount)
     // fix anything that appeared before the script started
     fixDocument()
-    const initIntervalID = setInterval(fixDocument)
+    const initInterval = setInterval(fixDocument)
     window.addEventListener("load", () => {
-        clearInterval(initIntervalID)
+        clearInterval(initInterval)
         fixDocument()
-        // setInterval(() => fixElement(document.body), 1000)
+        if (storage.constantUpdates) {
+            setInterval(fixDocument, 1000)
+        }
     })
     // observe changes in tree
     new MutationObserver(mutations => {
-        mutations.forEach(function (mutation) {
-            if (fixElement(mutation.target)) {
-                // updated element
-            }
+        mutations.forEach(mutation => {
+            fixElement(mutation.target)
             saveStorage()
         })
     }).observe(document.body, {
@@ -186,14 +187,14 @@ function fixDocument() {
         characterData: true
     })
     // observe title
-    if (document.querySelector("title")) {
-        new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (fixElement(mutation.target)) {
-                    // updated element
-                }
+    if (title = document.querySelector("title")) {
+        new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                fixElement(mutation.target)
                 saveStorage()
             })
-        }).observe(document.querySelector("title"), {childList: true})
+        }).observe(title, {
+            childList: true
+        })
     }
 })()
