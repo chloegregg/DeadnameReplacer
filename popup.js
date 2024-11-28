@@ -70,8 +70,8 @@ function createNewDead(index = 0) {
     const div = temp.firstChild
     temp.remove()
     div.querySelector(".remove").onclick = () => div.querySelectorAll("input").forEach(i => {
-        i.value = ""
-        storage.deadnames[index][i.name] = ""
+        storage.deadnames[index][i.name] = i.value = ""
+        saveStorage()
     })
     deadnamesDiv.appendChild(div)
     if (storage.deadnames.length > index) {
