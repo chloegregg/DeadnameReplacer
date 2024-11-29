@@ -68,14 +68,42 @@ function updateCount() {
 // replace text
 function fixText(text, substitutions = regexedSubs) {
     for (let i = 0; i < substitutions.length; i++) {
-        const matches = text.matchAll(substitutions[i][0]).toArray().length
-        if (matches > 0) {
+        const matches = text.matchAll(substitutions[i][0]).toArray()
+        if (matches.length > 0) {
             text = text.replace(substitutions[i][0], substitutions[i][1])
         }
-        localCount += matches
+        localCount += matches.length
     }
     updateCount()
     return text
+}
+function fixTextUsingElements(text, pattern="${name}", substitutions = regexedSubs) {
+    const nodes = [text]
+    for (let i = 0; i < substitutions.length; i++) {
+        let nodeIndex = 0 // nodeIndex is always even to capture text nodes
+        while (nodeIndex < nodes.length) {
+            const node = nodes[nodeIndex]
+            const matches = node.matchAll(substitutions[i][0]).toArray()
+            const inserted = []
+            let lastIndex = 0
+            for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
+                const match = matches[matchIndex]
+                const fixed = match[0].replace(substitutions[i][0], substitutions[i][1])
+                const container = document.createElement("span")
+                container.innerHTML = pattern.replace(/\$\{name\}/gi, fixed)
+                container.className = "dnr-fixed-text"
+                inserted.push(node.slice(lastIndex, match.index))
+                inserted.push(container)
+                lastIndex = match.index + match[0].length
+            }
+            inserted.push(node.slice(lastIndex))
+            nodes.splice(nodeIndex, 1, ...inserted)
+            localCount += matches.length
+            nodeIndex += 1 + inserted.length
+        }
+    }
+    updateCount()
+    return nodes
 }
 
 function fixElement(element, substitutions = regexedSubs) {
@@ -97,7 +125,6 @@ function fixElement(element, substitutions = regexedSubs) {
         }
         // change input values
         if (element.tagName && INPUT_WHITELIST.includes(element.tagName.toLowerCase())) {
-            console.log("changing ", element.tagName)
             const fixed = fixText(element.value)
             if (fixed !== element.value) {
                 changed = true
@@ -142,10 +169,23 @@ function fixElement(element, substitutions = regexedSubs) {
     while (child) {
         switch (child.nodeType) {
             case Node.TEXT_NODE:
-                const fixed = fixText(child.data, substitutions)
-                if (fixed !== child.data) {
-                    changed = true
-                    child.data = fixed
+                if (storage.useHighlight) {
+                    const fixed = fixTextUsingElements(child.data, storage.highlightPattern, substitutions)
+                    if (fixed[0] !== child.data) {
+                        changed = true
+                        child.after(...fixed)
+                        let original = child
+                        for (let i = 0; i < fixed.length; i++) {
+                            child = child.nextSibling
+                        }
+                        original.remove()
+                    }
+                } else {
+                    const fixed = fixText(child.data, substitutions)
+                    if (fixed !== child.data) {
+                        changed = true
+                        child.data = fixed
+                    }
                 }
                 break
             default:
@@ -159,7 +199,8 @@ function fixElement(element, substitutions = regexedSubs) {
 
 function fixDocument() {
     fixElement(document.body)
-    fixElement(document.querySelector('title'))
+    const title = document.querySelector("title")
+    title.innerText = fixText(title.innerText)
     saveStorage()
 }
 
@@ -186,6 +227,12 @@ function fixDocument() {
         fixDocument()
     })
     storageEvent.addListener("count", updateCount)
+    
+    const stylesheet = document.createElement("style")
+    document.head.appendChild(stylesheet)
+    storageEvent.addListener("stylesheet", () => {
+        stylesheet.textContent = storage.stylesheet
+    })
     // fix anything that appeared before the script started
     fixDocument()
     const initInterval = setInterval(fixDocument)
