@@ -89,12 +89,13 @@ function fixTextUsingElements(text, pattern="${name}", substitutions = regexedSu
             for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
                 const match = matches[matchIndex]
                 const fixed = match[0].replace(substitutions[i][0], substitutions[i][1])
+                const innerFixed = fixed.slice(match[1].length, -match[match.length-1].length)
                 const container = document.createElement("span")
-                container.innerHTML = pattern.replace(/\$\{name\}/gi, fixed)
+                container.innerHTML = pattern.replace(/\$\{name\}/gi, innerFixed)
                 container.className = "dnr-fixed-text"
-                inserted.push(node.slice(lastIndex, match.index))
+                inserted.push(node.slice(lastIndex, match.index + match[1].length))
                 inserted.push(container)
-                lastIndex = match.index + match[0].length
+                lastIndex = match.index + match[0].length - match[match.length-1].length
             }
             inserted.push(node.slice(lastIndex))
             nodes.splice(nodeIndex, 1, ...inserted)
@@ -200,7 +201,9 @@ function fixElement(element, substitutions = regexedSubs) {
 function fixDocument() {
     fixElement(document.body)
     const title = document.querySelector("title")
-    title.innerText = fixText(title.innerText)
+    if (title) {
+        title.innerText = fixText(title.innerText)
+    }
     saveStorage()
 }
 
@@ -227,7 +230,7 @@ function fixDocument() {
         fixDocument()
     })
     storageEvent.addListener("count", updateCount)
-    
+
     const stylesheet = document.createElement("style")
     document.head.appendChild(stylesheet)
     storageEvent.addListener("stylesheet", () => {
