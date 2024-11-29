@@ -5,6 +5,7 @@ const storage = {
     substitutions: [],
     count: 0,
 }
+let currentSavedStorage = {}
 const storageEvent = {
     update(property) {
         if (this._listeners[property] === undefined) {
@@ -45,7 +46,13 @@ function loadStorage() {
 }
 function saveStorage() {
     if (storageEvent.loaded) {
-        chrome.storage.local.set(storage)
+        const updated = {}
+        for (const key of Object.keys(storage)) {
+            if (storage[key] !== currentSavedStorage[key]) {
+                updated[key] = currentSavedStorage[key] = storage[key]
+            }
+        }
+        chrome.storage.local.set(updated)
     }
 }
 // generate substitutions from all `bad` into `good`

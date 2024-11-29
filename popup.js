@@ -5,6 +5,7 @@ const storage = {
     substitutions: [],
     count: 0,
 }
+let currentSavedStorage = {}
 const storageEvent = {
     update(property) {
         if (this._listeners[property] === undefined) {
@@ -44,7 +45,13 @@ function loadStorage() {
 }
 function saveStorage() {
     if (storageEvent.loaded) {
-        chrome.storage.local.set(storage)
+        const updated = {}
+        for (const key of Object.keys(storage)) {
+            if (storage[key] !== currentSavedStorage[key]) {
+                updated[key] = currentSavedStorage[key] = storage[key]
+            }
+        }
+        chrome.storage.local.set(updated)
     }
 }
 function createNewDead(index = 0) {
@@ -71,7 +78,6 @@ function createNewDead(index = 0) {
     temp.remove()
     div.querySelector(".remove").onclick = () => div.querySelectorAll("input").forEach(i => {
         storage.deadnames[index][i.name] = i.value = ""
-        saveStorage()
     })
     deadnamesDiv.appendChild(div)
     if (storage.deadnames.length > index) {
@@ -118,11 +124,13 @@ function loadNames() {
 
 function main() {
     document.getElementById("save").addEventListener("click", saveStorage)
-    loadStorage().then(loadNames)
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-            storage[key] = newValue
-        }
-    })
+    loadStorage().then(() => {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+                storage[key] = newValue
+                storageEvent.update(key)
+            }
+        })
+    }).then(loadNames)
 }
 main()
