@@ -89,7 +89,7 @@ function fixTextUsingElements(text, pattern="${name}", substitutions = regexedSu
             for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
                 const match = matches[matchIndex]
                 const fixed = match[0].replace(substitutions[i][0], substitutions[i][1])
-                const innerFixed = fixed.slice(match[1].length, -match[match.length-1].length)
+                const innerFixed = fixed.slice(match[1].length, fixed.length - match[match.length-1].length)
                 const container = document.createElement("span")
                 container.innerHTML = pattern.replace(/\$\{name\}/gi, innerFixed)
                 container.className = "dnr-fixed-text"
