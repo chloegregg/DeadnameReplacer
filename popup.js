@@ -90,16 +90,10 @@ function createNewDead(index = 0) {
         storage.deadnames[index][i.name] = i.value = ""
     })
     deadnamesDiv.appendChild(div)
-    if (storage.deadnames.length > index) {
-        if (storage.deadnames[index].first) {
-            deadnamesDiv.lastChild.querySelectorAll("input").forEach(element => {
-                element.value = storage.deadnames[index][element.name]
-            })
-        }
-    } else {
+    if (storage.deadnames.length <= index) {
         storage.deadnames.push({first: "", last: "", middle: "", honorific: ""})
     }
-    listenToNewDead(deadnamesDiv.lastChild, index)
+    listenToNewDead(div, index)
 }
 
 function listenToNewDead(element, index) {
@@ -108,15 +102,12 @@ function listenToNewDead(element, index) {
         createNewDead(index + 1)
         created = true
     }
-    for (const inp of element.getElementsByTagName("input")) {
-        inp.addEventListener("input", event => {
-            if (!created) {
-                createNewDead(index + 1)
-                created = true
-            }
-            storage.deadnames[index][event.target.name] = event.target.value
-        })
-    }
+    connectInputsTo(element, storage.deadnames[index], event => {
+        if (!created) {
+            createNewDead(index + 1)
+            created = true
+        }
+    })
 }
 
 function loadNames() {
@@ -136,12 +127,15 @@ function loadSettings() {
     highlightToggle.addEventListener("input", updateHighlightState)
     updateHighlightState()
 }
-function connectInputsTo(div, object) {
+function connectInputsTo(div, object, callback) {
     div.querySelectorAll("input").forEach(element => {
         const dataKey = element.type == "checkbox" ? "checked" : "value"
         element[dataKey] = object[element.name]
         element.addEventListener("input", event => {
             object[element.name] = element[dataKey]
+            if (callback) {
+                callback(event)
+            }
         })
     })
 }
