@@ -59,10 +59,19 @@ function saveStorage() {
 // generate substitutions from all `bad` into `good`
 function generateSubstitutions(bad, good) {
     storage.substitutions = []
+    function addSub(bad, good) {
+        const sub = getSubstitution(bad, good)
+        if (!sub) {
+            return
+        }
+        if (!storage.substitutions.flat().some(existing => existing[0] == sub[0])) {
+            storage.substitutions.push(sub)
+        }
+    }
     for (let i = 0; i < bad.length; i++) {
         const replName = {}
         for (const key of ["first", "middle", "last", "honorific"]) {
-            if (replName[key] == "-") {
+            if (good[key] == "-") {
                 replName[key] = bad[i][key]
             } else {
                 replName[key] = good[key]
@@ -94,9 +103,9 @@ function generateSubstitutions(bad, good) {
                     bad.push(nameCombos[i][j][0])
                     good.push(nameCombos[i][j][1])
                 }
-                storage.substitutions.push(getSubstitution(bad.join(" "), good.join(" ")))
+                addSub(bad.join(" "), good.join(" "))
                 if (bad.length > 1) {
-                    storage.substitutions.push(getSubstitution(bad.join(""), good.join("")))
+                    addSub(bad.join(""), good.join(""))
                 }
             }
         }
@@ -106,7 +115,6 @@ function generateSubstitutions(bad, good) {
         addCombination(["honorific", "last"])
         addCombination(["first", "middle", "last"])
         addCombination(["first", "last"])
-        addCombination(["last", "first"])
         addCombination(["first"])
         addCombination(["last"])
     }
