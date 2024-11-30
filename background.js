@@ -60,28 +60,18 @@ function saveStorage() {
 function generateSubstitutions(bad, good) {
     storage.substitutions = []
     for (let i = 0; i < bad.length; i++) {
-        const replName = {first: good.first, middle: good.middle, last: good.last, honorific: good.honorific}
-        // fill out names if not given (not honorific)
-        if (!replName.first.match(MULTI_WORD_REGEX)) {
-            replName.first = bad[i].first
+        const replName = {}
+        for (const key of ["first", "middle", "last", "honorific"]) {
+            if (replName[key] == "-") {
+                replName[key] = bad[i][key]
+            } else {
+                replName[key] = good[key]
+            }
         }
-        if (!replName.middle.match(MULTI_WORD_REGEX)) {
-            replName.middle = bad[i].middle
-        }
-        if (!replName.last.match(MULTI_WORD_REGEX)) {
-            replName.last = bad[i].last
-        }
-        // if (!replName.honorific) {
-        //     replName.honorific = ""
-        // }
-        // if (!bad[i].honorific) {
-        //     bad[i].honorific = ""
-        // }
         function addCombination(names) {
             const badName = names.map(key => bad[i][key])
             const goodName = names.map(key => replName[key])
             let nameCombos = [Array(names.length)]
-            console.log(badName, goodName)
             for (let i = 0; i < names.length; i++) {
                 if (!badName[i].match(MULTI_WORD_REGEX)) {
                     return
@@ -100,14 +90,13 @@ function generateSubstitutions(bad, good) {
             }
             for (let i = 0; i < nameCombos.length; i++) {
                 const [bad, good] = [[], []]
-                console.log(nameCombos[i])
                 for (let j = 0; j < nameCombos[i].length; j++) {
                     bad.push(nameCombos[i][j][0])
                     good.push(nameCombos[i][j][1])
                 }
-                addSubstitution(bad.join(" "), good.join(" "))
+                storage.substitutions.push(getSubstitution(bad.join(" "), good.join(" ")))
                 if (bad.length > 1) {
-                    addSubstitution(bad.join(""), good.join(""))
+                    storage.substitutions.push(getSubstitution(bad.join(""), good.join("")))
                 }
             }
         }
@@ -117,19 +106,20 @@ function generateSubstitutions(bad, good) {
         addCombination(["honorific", "last"])
         addCombination(["first", "middle", "last"])
         addCombination(["first", "last"])
+        addCombination(["last", "first"])
         addCombination(["first"])
         addCombination(["last"])
     }
     saveStorage()
 }
-// add a substitution
-function addSubstitution(bad, good) {
+// get a substitution
+function getSubstitution(bad, good) {
     bad = bad.toLowerCase().trim()
     good = good.toLowerCase().trim()
     if (bad == good) {
         return
     }
-    if (!bad.match(WORD_REGEX) || !good.match(WORD_REGEX)) {
+    if (!bad.match(WORD_REGEX)) {
         return
     }
     function titleCase(str) {
@@ -162,18 +152,22 @@ function addSubstitution(bad, good) {
         }
         return [[`([^${WORD_CHARS}]|^)${bad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, `([^${WORD_CHARS}]+)`)}([^${WORD_CHARS}]|$)`, flags], replacement]
     }
-    // lower case
-    storage.substitutions.push(createReplFor(bad.toLowerCase(), good.toLowerCase()))
-    // UPPER CASE
-    storage.substitutions.push(createReplFor(bad.toUpperCase(), good.toUpperCase()))
-    if (bad.length > 0 && good.length > 0) {
-        // Title Case
-        storage.substitutions.push(createReplFor(titleCase(bad), titleCase(good)))
-        // Single title case
-        storage.substitutions.push(createReplFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
+    const createdSubs = []
+    if (good.length > 0) {
+        // lower case
+        createdSubs.push(createReplFor(bad.toLowerCase(), good.toLowerCase()))
+        // UPPER CASE
+        createdSubs.push(createReplFor(bad.toUpperCase(), good.toUpperCase()))
+        if (bad.length > 0) {
+            // Title Case
+            createdSubs.push(createReplFor(titleCase(bad), titleCase(good)))
+            // Single title case
+            createdSubs.push(createReplFor(bad[0].toUpperCase()+bad.slice(1).toLowerCase(), good[0].toUpperCase()+good.slice(1).toLowerCase()))
+        }
     }
-    // aNy oThEr cAsE (gets replaced with Title Case now)
-    storage.substitutions.push(createReplFor(bad, titleCase(good), "gi"))
+    // aNy oThEr cAsE (gets replaced with Title Case)
+    createdSubs.push(createReplFor(bad, titleCase(good), "gi"))
+    return createdSubs
 }
 function parseAndAddDeadname(text) {
     const names = text.matchAll(WORD_REGEX).map(match => match[0]).toArray()

@@ -73,7 +73,7 @@ function updateCount() {
 }
 
 // replace text
-function fixText(text, substitutions = regexedSubs) {
+function fixText(text, substitutions) {
     for (let i = 0; i < substitutions.length; i++) {
         const matches = text.matchAll(substitutions[i][0]).toArray()
         if (matches.length > 0) {
@@ -84,7 +84,7 @@ function fixText(text, substitutions = regexedSubs) {
     updateCount()
     return text
 }
-function fixTextUsingElements(text, pattern="${name}", substitutions = regexedSubs) {
+function fixTextUsingElements(text, pattern="${name}", substitutions) {
     const nodes = [text]
     for (let i = 0; i < substitutions.length; i++) {
         let nodeIndex = 0 // nodeIndex is always even to capture text nodes
@@ -133,7 +133,7 @@ function fixElement(element, substitutions = regexedSubs) {
         }
         // change input values
         if (element.tagName && INPUT_WHITELIST.includes(element.tagName.toLowerCase())) {
-            const fixed = fixText(element.value)
+            const fixed = fixText(element.value, substitutions.flat())
             if (fixed !== element.value) {
                 changed = true
                 element.value = fixed
@@ -142,10 +142,10 @@ function fixElement(element, substitutions = regexedSubs) {
     }
     if (!(storage.changeInputs && containsInput)) {
         substitutions = [...substitutions]
-        for (let i = 4; i < substitutions.length; i += 5) {
-            if (html.match(substitutions[i][0]) === null) {
-                substitutions.splice(i-4, 5)
-                i -= 5
+        for (let i = 0; i < substitutions.length; i++) {
+            if (html.match(substitutions[i][substitutions[i].length-1][0]) === null) {
+                substitutions.splice(i, 1)
+                i--
             }
         }
         if (substitutions.length == 0) {
@@ -164,7 +164,7 @@ function fixElement(element, substitutions = regexedSubs) {
                     continue attrs
                 }
             }
-            const fixed = fixText(element.attributes[at].value)
+            const fixed = fixText(element.attributes[at].value, substitutions.flat())
             if (fixed !== element.attributes[at].value) {
                 changed = true
                 element.attributes[at].value = fixed
@@ -178,7 +178,7 @@ function fixElement(element, substitutions = regexedSubs) {
         switch (child.nodeType) {
             case Node.TEXT_NODE:
                 if (storage.useHighlight) {
-                    const fixed = fixTextUsingElements(child.data, storage.highlightPattern, substitutions)
+                    const fixed = fixTextUsingElements(child.data, storage.highlightPattern, substitutions.flat())
                     if (fixed[0] !== child.data) {
                         changed = true
                         child.after(...fixed)
@@ -189,7 +189,7 @@ function fixElement(element, substitutions = regexedSubs) {
                         original.remove()
                     }
                 } else {
-                    const fixed = fixText(child.data, substitutions)
+                    const fixed = fixText(child.data, substitutions.flat())
                     if (fixed !== child.data) {
                         changed = true
                         child.data = fixed
@@ -209,7 +209,7 @@ function fixDocument() {
     fixElement(document.body)
     const title = document.querySelector("title")
     if (title) {
-        title.innerText = fixText(title.innerText)
+        title.innerText = fixText(title.innerText, regexedSubs.flat())
     }
     saveStorage()
 }
@@ -232,7 +232,11 @@ function fixDocument() {
     storageEvent.addListener("substitutions", () => {
         regexedSubs = []
         for (let i = 0; i < storage.substitutions.length; i++) {
-            regexedSubs.push([new RegExp(...storage.substitutions[i][0]), storage.substitutions[i][1]])
+            const patternSubs = []
+            for (let j = 0; j < storage.substitutions[i].length; j++) {
+                patternSubs.push([new RegExp(...storage.substitutions[i][j][0]), storage.substitutions[i][j][1]])
+            }
+            regexedSubs.push(patternSubs)
         }
         fixDocument()
     })
