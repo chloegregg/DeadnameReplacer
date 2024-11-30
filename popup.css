@@ -26,11 +26,11 @@ input{
     background-color: rgb(29, 29, 29);
 }
 
-.namediv{
+.inputdiv{
     margin: 20px;
-    text-align:right ; 
+    text-align:right; 
 }
-.namediv > input{
+.inputdiv > input{
     color: white;
     padding:4px;
     width: 50%;

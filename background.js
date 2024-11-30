@@ -4,6 +4,29 @@ const storage = {
     chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
+    changeInputs: false,
+    constantUpdates: false,
+    useHighlight: false,
+    highlightPattern: '<span class="rainbow_text_animated">${name}</span>',
+    stylesheet: `
+    .rainbow_text_animated {
+        background: linear-gradient(to right, #6666ff, #0099ff , #00ff00, #ff3399, #6666ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: rainbow_animation 6s ease-in-out infinite;
+        background-size: 400% 100%;
+    }
+
+    @keyframes rainbow_animation {
+        0%,100% {
+            background-position: 0 0;
+        }
+
+        50% {
+            background-position: 100% 0;
+        }
+    }`
 }
 let currentSavedStorage = {}
 const storageEvent = {
@@ -179,10 +202,11 @@ function getSubstitution(bad, good) {
 }
 function parseAndAddDeadname(text) {
     const names = text.matchAll(WORD_REGEX).map(match => match[0]).toArray()
+    console.log(names)
     if (names.length == 1) {
-        storage.deadnames.push({first: names[0], middle: "", last: ""})
+        storage.deadnames.push({first: names[0], middle: "", last: "", honorific: ""})
     } else {
-        storage.deadnames.push({first: names[0], middle: names.slice(1, -1).join(" "), last: names[names.length-1]})
+        storage.deadnames.push({first: names[0], middle: names.slice(1, -1).join(" "), last: names[names.length-1], honorific: ""})
     }
     saveStorage()
 }
@@ -205,9 +229,7 @@ function main() {
                 storageEvent.update(key)
             }
         })
-    })
-    storageEvent.addListener(["deadnames", "chosenname"], () => {
-        generateSubstitutions(storage.deadnames, storage.chosenname)
+        saveStorage()
     })
     // remove empty deadnames
     storageEvent.addListener("deadnames", () => {
@@ -223,6 +245,9 @@ function main() {
             storageEvent.update("deadnames")
             saveStorage()
         }
+    })
+    storageEvent.addListener(["deadnames", "chosenname"], () => {
+        generateSubstitutions(storage.deadnames, storage.chosenname)
     })
     chrome.contextMenus.onClicked.addListener(info => {
         if (info.menuItemId == "deadname-remover") {

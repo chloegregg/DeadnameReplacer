@@ -4,6 +4,11 @@ const storage = {
     chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
+    changeInputs: false,
+    constantUpdates: false,
+    useHighlight: false,
+    highlightPattern: '',
+    stylesheet: ``
 }
 let currentSavedStorage = {}
 const storageEvent = {

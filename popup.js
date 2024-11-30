@@ -4,6 +4,11 @@ const storage = {
     chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
+    changeInputs: false,
+    constantUpdates: false,
+    useHighlight: false,
+    highlightPattern: '',
+    stylesheet: ``
 }
 let currentSavedStorage = {}
 const storageEvent = {
@@ -32,6 +37,7 @@ const storageEvent = {
 }
 const deadnamesDiv = document.getElementById("deadnames")
 const chosennameDiv = document.getElementById("chosenname")
+const settingsDiv = document.getElementById("settings")
 
 
 function loadStorage() {
@@ -61,19 +67,19 @@ function createNewDead(index = 0) {
                 <h3>Dead #${index+1} <span class="remove">(clear)</span></h3>
                 
             </div>
-            <div class="namediv">
+            <div class="inputdiv">
                 <label for="first">First Name: </label>
                 <input name="first" type="text">
             </div>
-            <div class="namediv">
+            <div class="inputdiv">
                 <label for="middle">Middle Name(s): </label>
                 <input name="middle" type="text">
             </div>
-            <div class="namediv">
+            <div class="inputdiv">
                 <label for="last">Last Name: </label>
                 <input name="last" type="text">
             </div>
-            <div class="namediv">
+            <div class="inputdiv">
                 <label for="honorific">Honorific: </label>
                 <input name="honorific" type="text">
             </div>
@@ -91,7 +97,7 @@ function createNewDead(index = 0) {
             })
         }
     } else {
-        storage.deadnames.push({first: "", last:"", middle: "", honorific: ""})
+        storage.deadnames.push({first: "", last: "", middle: "", honorific: ""})
     }
     listenToNewDead(deadnamesDiv.lastChild, index)
 }
@@ -118,10 +124,24 @@ function loadNames() {
         dn.remove()
     }
     createNewDead()
-    chosennameDiv.querySelectorAll("input").forEach(element => {
-        element.value = storage.chosenname[element.name]
+    connectInputsTo(chosennameDiv, storage.chosenname)
+}
+function loadSettings() {
+    connectInputsTo(settingsDiv, storage)
+    const highlightToggle = document.getElementById("highlighttoggle")
+    const highlightTemplate = document.getElementById("highlighthidden")
+    function updateHighlightState() {
+        highlightTemplate.style.display = highlightToggle.checked ? "block" : "none"
+    }
+    highlightToggle.addEventListener("input", updateHighlightState)
+    updateHighlightState()
+}
+function connectInputsTo(div, object) {
+    div.querySelectorAll("input").forEach(element => {
+        const dataKey = element.type == "checkbox" ? "checked" : "value"
+        element[dataKey] = object[element.name]
         element.addEventListener("input", event => {
-            storage.chosenname[event.target.name] = event.target.value
+            object[element.name] = element[dataKey]
         })
     })
 }
@@ -135,6 +155,6 @@ function main() {
                 storageEvent.update(key)
             }
         })
-    }).then(loadNames)
+    }).then(loadNames).then(loadSettings)
 }
 main()

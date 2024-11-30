@@ -7,28 +7,60 @@
     <header class="container">
         <h1>Deadname Replacer</h1>
     </header>
+    <details>
+        <summary>
+            <h3 style="display: inline;">Settings / Stats:</h3>
+        </summary>
+        <div id="settings">
+            <div class="inputdiv" title="Total number of names replaced (since install)">
+                <label for="count">Total Replaced! </label>
+                <input name="count" type="text" readonly>
+            </div>
+            <div class="inputdiv" title="When enabled, will scan and alter input fields, may have performance impacts">
+                <label for="changeInputs">Alter Inputs: </label>
+                <input name="changeInputs" type="checkbox">
+            </div>
+            <div class="inputdiv" title="When enabled, will rescan every second, hopefully making sure things work, large performance impacts">
+                <label for="constantUpdates">Constantly Update: </label>
+                <input name="constantUpdates" type="checkbox">
+            </div>
+            <div class="inputdiv" title="When enabled, will highlight the replacements with the given html, slight performance impacts, might break some sites">
+                <label for="useHighlight">Highlight Changes: </label>
+                <input name="useHighlight" type="checkbox" id="highlighttoggle">
+            </div>
+            <div class="inputdiv" id="highlighthidden" title="Pattern to highlight with, ${name} is where the name is inserted">
+                <label for="highlightPattern">Highlight Pattern: </label>
+                <input name="highlightPattern" type="text">
+            </div>
+            <div class="inputdiv" title="Custom stylesheet applied to every page, useful with the highlight pattern">
+                <label for="stylesheet">Custom Stylesheet: </label>
+                <input name="stylesheet" type="text">
+            </div>
+        </div>
+    </details>
     <h3>Chosen Name: </h3>
     <div id="chosenname">
-        <div class="namediv">
+        <div class="inputdiv">
             <label for="first">First Name: </label>
             <input name="first" type="text">
         </div>
-        <div class="namediv">
+        <div class="inputdiv">
             <label for="middle">Middle Name(s): </label>
             <input name="middle" type="text">
         </div>
-        <div class="namediv">
+        <div class="inputdiv">
             <label for="last">Last Name: </label>
             <input name="last" type="text">
         </div>
-        <div class="namediv">
+        <div class="inputdiv">
             <label for="honorific">Honorific: </label>
             <input name="honorific" type="text">
         </div>
     </div>
-    <h3>Deadnames: </h3>
     <details>
-        <summary>Click to reveal</summary>
+        <summary>
+            <h3 style="display: inline;">Deadnames:</h3>
+        </summary>
         <div id="deadnames"></div>
     </details>
     <button id="save">save</button>  
