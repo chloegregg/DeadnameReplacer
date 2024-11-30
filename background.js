@@ -81,9 +81,10 @@ function generateSubstitutions(bad, good) {
             const badName = names.map(key => bad[i][key])
             const goodName = names.map(key => replName[key])
             let nameCombos = [Array(names.length)]
+            console.log(badName, goodName)
             for (let i = 0; i < names.length; i++) {
                 if (!badName[i].match(MULTI_WORD_REGEX)) {
-                    continue
+                    return
                 }
                 const badNames = badName[i].split("/")
                 const goodNames = goodName[i].split("/")
@@ -99,6 +100,7 @@ function generateSubstitutions(bad, good) {
             }
             for (let i = 0; i < nameCombos.length; i++) {
                 const [bad, good] = [[], []]
+                console.log(nameCombos[i])
                 for (let j = 0; j < nameCombos[i].length; j++) {
                     bad.push(nameCombos[i][j][0])
                     good.push(nameCombos[i][j][1])

@@ -91,7 +91,7 @@ function createNewDead(index = 0) {
             })
         }
     } else {
-        storage.deadnames.push({first: "", last:"", middle: ""})
+        storage.deadnames.push({first: "", last:"", middle: "", honorific: ""})
     }
     listenToNewDead(deadnamesDiv.lastChild, index)
 }
