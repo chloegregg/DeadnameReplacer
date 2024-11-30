@@ -1,7 +1,7 @@
 
 const storage = {
     deadnames: [], 
-    chosenname: {first: "", last:"", middle: ""},
+    chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
 }

@@ -1,7 +1,7 @@
 
 const storage = {
     deadnames: [], 
-    chosenname: {first: "", last:"", middle: ""},
+    chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
 }
@@ -34,6 +34,7 @@ const storageEvent = {
 // https://regex101.com/r/kGIVxi/1
 const WORD_CHARS = "a-zA-Z\u00C0-\u024F\u1E00-\u1EFF"
 const WORD_REGEX = new RegExp(`[${WORD_CHARS}]+`, "g")
+const MULTI_WORD_REGEX = new RegExp(`[${WORD_CHARS}]+(\/[${WORD_CHARS}]+)*`, "g")
 
 function loadStorage() {
     return chrome.storage.local.get().then(value => {
@@ -59,26 +60,63 @@ function saveStorage() {
 function generateSubstitutions(bad, good) {
     storage.substitutions = []
     for (let i = 0; i < bad.length; i++) {
-        const replName = {first: good.first, middle: good.middle, last: good.last}
-        if (!replName.first) {
+        const replName = {first: good.first, middle: good.middle, last: good.last, honorific: good.honorific}
+        // fill out names if not given (not honorific)
+        if (!replName.first.match(MULTI_WORD_REGEX)) {
             replName.first = bad[i].first
         }
-        if (!replName.middle) {
+        if (!replName.middle.match(MULTI_WORD_REGEX)) {
             replName.middle = bad[i].middle
         }
-        if (!replName.last) {
+        if (!replName.last.match(MULTI_WORD_REGEX)) {
             replName.last = bad[i].last
         }
-        if (bad[i].last.match(WORD_REGEX) && replName.last.match(WORD_REGEX)) {
-            if (bad[i].middle.match(WORD_REGEX) && replName.middle.match(WORD_REGEX)) {
-                addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(" "), [replName.first, replName.middle, replName.last].join(" "))
-                addSubstitution([bad[i].first, bad[i].middle, bad[i].last].join(""), [replName.first, replName.middle, replName.last].join(""))
+        // if (!replName.honorific) {
+        //     replName.honorific = ""
+        // }
+        // if (!bad[i].honorific) {
+        //     bad[i].honorific = ""
+        // }
+        function addCombination(names) {
+            const badName = names.map(key => bad[i][key])
+            const goodName = names.map(key => replName[key])
+            let nameCombos = [Array(names.length)]
+            for (let i = 0; i < names.length; i++) {
+                if (!badName[i].match(MULTI_WORD_REGEX)) {
+                    continue
+                }
+                const badNames = badName[i].split("/")
+                const goodNames = goodName[i].split("/")
+                let newNameCombos = []
+                for (let j = 0; j < badNames.length; j++) {
+                    const combos = nameCombos.map(c => [...c])
+                    for (let k = 0; k < combos.length; k++) {
+                        combos[k][i] = [badNames[j], goodNames[badNames.length == goodNames.length ? j : 0]]
+                    }
+                    newNameCombos = newNameCombos.concat(combos)
+                }
+                nameCombos = newNameCombos
             }
-            addSubstitution([bad[i].first, bad[i].last].join(" "), [replName.first, replName.last].join(" "))
-            addSubstitution([bad[i].first, bad[i].last].join(""), [replName.first, replName.last].join(""))
-            addSubstitution(bad[i].last, replName.last)
+            for (let i = 0; i < nameCombos.length; i++) {
+                const [bad, good] = [[], []]
+                for (let j = 0; j < nameCombos[i].length; j++) {
+                    bad.push(nameCombos[i][j][0])
+                    good.push(nameCombos[i][j][1])
+                }
+                addSubstitution(bad.join(" "), good.join(" "))
+                if (bad.length > 1) {
+                    addSubstitution(bad.join(""), good.join(""))
+                }
+            }
         }
-        addSubstitution(bad[i].first, replName.first)
+        addCombination(["honorific", "first", "middle", "last"])
+        addCombination(["honorific", "first", "last"])
+        addCombination(["honorific", "first"])
+        addCombination(["honorific", "last"])
+        addCombination(["first", "middle", "last"])
+        addCombination(["first", "last"])
+        addCombination(["first"])
+        addCombination(["last"])
     }
     saveStorage()
 }

@@ -1,7 +1,7 @@
 
 const storage = {
     deadnames: [], 
-    chosenname: {first: "", last:"", middle: ""},
+    chosenname: {first: "", last:"", middle: "", honorific: ""},
     substitutions: [],
     count: 0,
 }
@@ -72,6 +72,10 @@ function createNewDead(index = 0) {
             <div class="namediv">
                 <label for="last">Last Name: </label>
                 <input name="last" type="text">
+            </div>
+            <div class="namediv">
+                <label for="honorific">Honorific: </label>
+                <input name="honorific" type="text">
             </div>
         </div>`
     const div = temp.firstChild
