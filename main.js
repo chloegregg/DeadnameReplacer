@@ -125,7 +125,7 @@ function fixElement(element, substitutions = regexedSubs) {
     }
     const html = element.innerHTML
     if (!html) {
-        return
+        return false
     }
     let changed = false
     let containsInput = false
@@ -154,7 +154,7 @@ function fixElement(element, substitutions = regexedSubs) {
             }
         }
         if (substitutions.length == 0) {
-            return
+            return false
         }
     }
 
@@ -209,14 +209,17 @@ function fixElement(element, substitutions = regexedSubs) {
     }
     return changed
 }
-
-function fixDocument() {
-    fixElement(document.body)
-    const title = document.querySelector("title")
-    if (title) {
-        title.innerText = fixText(title.innerText, regexedSubs.flat())
+function fixTitle() {
+    const fixed = fixText(document.title, regexedSubs.flat())
+    if (fixed != document.title) {
+        document.title = fixed
     }
+}
+function fixDocument() {
+    let changed = fixElement(document.body)
+    fixTitle()
     saveStorage()
+    return changed
 }
 
 // init code
@@ -258,8 +261,13 @@ function fixDocument() {
     window.addEventListener("load", () => {
         clearInterval(initInterval)
         fixDocument()
+    })
+    let constantUpdateInterval
+    storageEvent.addListener("constantUpdates", () => {
         if (storage.constantUpdates) {
-            setInterval(fixDocument, 1000)
+            constantUpdateInterval = setInterval(fixDocument, 1000)
+        } else if (constantUpdateInterval) {
+            clearInterval(constantUpdateInterval)
         }
     })
     // observe changes in tree
@@ -278,7 +286,7 @@ function fixDocument() {
     if (title = document.querySelector("title")) {
         new MutationObserver(mutations => {
             mutations.forEach(mutation => {
-                fixElement(mutation.target)
+                fixTitle()
                 saveStorage()
             })
         }).observe(title, {
