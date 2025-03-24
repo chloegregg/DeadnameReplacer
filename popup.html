@@ -36,6 +36,14 @@
                 <label for="stylesheet">Custom Stylesheet: </label>
                 <input name="stylesheet" type="text">
             </div>
+            <div class="inputdiv" title="Regular expression filtering for URLs, only applies to origins that match the regex (e.g. '^.*://mail\.google\.com$' runs on just gmail)">
+                <label for="validURLs">URL (domain) whitelist regex: </label>
+                <input name="validURLs" type="text">
+            </div>
+            <div class="inputdiv" title="Regular expression filtering for URLs, does not apply to origins that match the regex (e.g. '^.*://www\.youtube\.com$' ignores just youtube)">
+                <label for="invalidURLs">URL (domain) blacklist regex: </label>
+                <input name="invalidURLs" type="text">
+            </div>
         </div>
     </details>
     <h3>Chosen Name: </h3>
