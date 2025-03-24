@@ -7,6 +7,8 @@ const storage = {
     changeInputs: false,
     constantUpdates: false,
     useHighlight: false,
+    validURLs: "^.*://.*$",
+    invalidURLs: "",
     highlightPattern: '',
     stylesheet: ``
 }
@@ -223,7 +225,7 @@ function fixDocument() {
 }
 
 // init code
-(function () {
+function main () {
     if (document.body === null) {
         // iframe from another origin or something
         return
@@ -293,4 +295,14 @@ function fixDocument() {
             childList: true
         })
     }
-})()
+}
+
+chrome.storage.local.get(["validURLs", "invalidURLs"]).then(result => {
+    if (result.validURLs && !new RegExp(result.validURLs).test(document.location.origin)) {
+        return
+    }
+    if (result.invalidURLs && new RegExp(result.invalidURLs).test(document.location.origin)) {
+        return
+    }
+    main()
+})

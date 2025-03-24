@@ -7,6 +7,8 @@ const storage = {
     changeInputs: false,
     constantUpdates: false,
     useHighlight: false,
+    validURLs: "^.*://.*$",
+    invalidURLs: "",
     highlightPattern: '',
     stylesheet: ``
 }
