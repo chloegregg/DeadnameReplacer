@@ -182,34 +182,33 @@ function fixElement(element, substitutions = regexedSubs) {
     // do children
     let child = element.firstChild
     while (child) {
-        switch (child.nodeType) {
-            case Node.TEXT_NODE:
-                if (storage.useHighlight) {
-                    const fixed = fixTextUsingElements(child.data, storage.highlightPattern, substitutions.flat())
-                    if (fixed[0] !== child.data) {
-                        changed = true
-                        child.after(...fixed)
-                        let original = child
-                        for (let i = 0; i < fixed.length; i++) {
-                            child = child.nextSibling
-                        }
-                        original.remove()
-                    }
-                } else {
-                    const fixed = fixText(child.data, substitutions.flat())
-                    if (fixed !== child.data) {
-                        changed = true
-                        child.data = fixed
-                    }
-                }
-                break
-            default:
-                changed ||= this.fixElement(child, substitutions)
-                break
-        }
+        changed ||= fixNode(child, substitutions)
         child = child.nextSibling
     }
     return changed
+}
+function fixNode(node, substitutions = regexedSubs) {
+    if (node.nodeType == Node.TEXT_NODE) {
+        if (storage.useHighlight) {
+            const fixed = fixTextUsingElements(node.data, storage.highlightPattern, substitutions.flat())
+            if (fixed[0] !== node.data) {
+                changed = true
+                node.after(...fixed)
+                let original = node
+                for (let i = 0; i < fixed.length; i++) {
+                    node = node.nextSibling
+                }
+                original.remove()
+            }
+        } else {
+            const fixed = fixText(node.data, substitutions.flat())
+            if (fixed !== node.data) {
+                changed = true
+                node.data = fixed
+            }
+        }
+    }
+    return fixElement(node, substitutions)
 }
 function fixTitle() {
     const fixed = fixText(document.title, regexedSubs.flat())
@@ -275,9 +274,19 @@ function main () {
     // observe changes in tree
     new MutationObserver(mutations => {
         mutations.forEach(mutation => {
-            fixElement(mutation.target)
-            saveStorage()
+            if (mutation.type === "characterData") {
+                fixNode(mutation.target)
+            } else if (mutation.type === "attributes") {
+                fixElement(mutation.target.parentElement)
+            } else if (mutation.type === "childList") {
+                for (let i = 0; i < mutation.addedNodes.length; i++) {
+                    fixNode(mutation.addedNodes[i])
+                }
+            }
         })
+        if (mutations.length > 0) {
+            saveStorage()
+        }
     }).observe(document.body, {
         childList: true,
         attributes: true,
