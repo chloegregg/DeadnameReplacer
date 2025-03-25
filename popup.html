@@ -14,35 +14,43 @@
         <div id="settings">
             <div class="inputdiv" title="Total number of names replaced (since install)">
                 <label for="count">Total Replaced! </label>
-                <input name="count" type="text" readonly>
+                <input name="count" type="text" class="auto" readonly>
             </div>
             <div class="inputdiv" title="When enabled, will scan and alter input fields, may have performance impacts">
                 <label for="changeInputs">Alter Inputs: </label>
-                <input name="changeInputs" type="checkbox">
+                <input name="changeInputs" type="checkbox" class="auto">
             </div>
             <div class="inputdiv" title="When enabled, will rescan every second, hopefully making sure things work, large performance impacts">
                 <label for="constantUpdates">Constantly Update: </label>
-                <input name="constantUpdates" type="checkbox">
+                <input name="constantUpdates" type="checkbox" class="auto">
             </div>
             <div class="inputdiv" title="When enabled, will highlight the replacements with the given html, slight performance impacts, might break some sites">
                 <label for="useHighlight">Highlight Changes: </label>
-                <input name="useHighlight" type="checkbox" id="highlighttoggle">
+                <input name="useHighlight" type="checkbox" class="auto" id="highlighttoggle">
             </div>
-            <div class="inputdiv" id="highlighthidden" title="Pattern to highlight with, ${name} is where the name is inserted">
+            <div class="inputdiv" enabler="highlighttoggle" title="Pattern to highlight with, ${name} is where the name is inserted">
                 <label for="highlightPattern">Highlight Pattern: </label>
-                <input name="highlightPattern" type="text">
+                <input name="highlightPattern" type="text" class="auto">
             </div>
             <div class="inputdiv" title="Custom stylesheet applied to every page, useful with the highlight pattern">
                 <label for="stylesheet">Custom Stylesheet: </label>
-                <input name="stylesheet" type="text">
+                <input name="stylesheet" type="text" class="auto">
             </div>
-            <div class="inputdiv" title="Regular expression filtering for URLs, only applies to origins that match the regex (e.g. '^.*://mail\.google\.com$' runs on just gmail)">
-                <label for="validURLs">URL (domain) whitelist regex: </label>
-                <input name="validURLs" type="text">
+            <div class="inputdiv" title="A comma separated list of hosts to filter URLs by, only applies to hosts that end with something in the list">
+                <label for="validURLList">Host (site) filter: </label>
+                <input name="validURLList" type="text" class="auto">
             </div>
-            <div class="inputdiv" title="Regular expression filtering for URLs, does not apply to origins that match the regex (e.g. '^.*://www\.youtube\.com$' ignores just youtube)">
-                <label for="invalidURLs">URL (domain) blacklist regex: </label>
-                <input name="invalidURLs" type="text">
+            <div class="inputdiv" title="When enabled, will also use a regular expression (regex) to filter out URLs">
+                <label for="useRegex">Use Regex: </label>
+                <input name="useRegex" type="checkbox" id="regextoggle">
+            </div>
+            <div class="inputdiv" enabler="regextoggle" title="Regular expression filtering for URLs, only applies to hosts that match the regex (e.g. '.*\.gov(\..+)?' applies on just hosts with .gov somewhere)">
+                <label for="validURLRegex">Host Regex: </label>
+                <input name="validURLRegex" type="text" class="auto">
+            </div>
+            <div class="inputdiv" title="When enabled, will use all filters as a blacklist, rather than a whitelist">
+                <label for="useBlacklist">As Blacklist: </label>
+                <input name="useBlacklist" type="checkbox" class="auto">
             </div>
         </div>
     </details>

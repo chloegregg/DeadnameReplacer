@@ -7,8 +7,9 @@ const storage = {
     changeInputs: false,
     constantUpdates: false,
     useHighlight: false,
-    validURLs: "^.*://.*$",
-    invalidURLs: "",
+    validURLRegex: ".*",
+    validURLList: "",
+    useBlacklist: false,
     highlightPattern: '<span class="rainbow_text_animated">${name}</span>',
     stylesheet: `
     .rainbow_text_animated {

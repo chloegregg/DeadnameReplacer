@@ -7,8 +7,9 @@ const storage = {
     changeInputs: false,
     constantUpdates: false,
     useHighlight: false,
-    validURLs: "^.*://.*$",
-    invalidURLs: "",
+    validURLRegex: ".*",
+    validURLList: "",
+    useBlacklist: false,
     highlightPattern: '',
     stylesheet: ``
 }
@@ -71,19 +72,19 @@ function createNewDead(index = 0) {
             </div>
             <div class="inputdiv">
                 <label for="first">First Name: </label>
-                <input name="first" type="text">
+                <input name="first" type="text" class="auto">
             </div>
             <div class="inputdiv">
                 <label for="middle">Middle Name(s): </label>
-                <input name="middle" type="text">
+                <input name="middle" type="text" class="auto">
             </div>
             <div class="inputdiv">
                 <label for="last">Last Name: </label>
-                <input name="last" type="text">
+                <input name="last" type="text" class="auto">
             </div>
             <div class="inputdiv">
                 <label for="honorific">Honorific: </label>
-                <input name="honorific" type="text">
+                <input name="honorific" type="text" class="auto">
             </div>
         </div>`
     const div = temp.firstChild
@@ -121,16 +122,12 @@ function loadNames() {
 }
 function loadSettings() {
     connectInputsTo(settingsDiv, storage)
-    const highlightToggle = document.getElementById("highlighttoggle")
-    const highlightTemplate = document.getElementById("highlighthidden")
-    function updateHighlightState() {
-        highlightTemplate.style.display = highlightToggle.checked ? "block" : "none"
-    }
-    highlightToggle.addEventListener("input", updateHighlightState)
-    updateHighlightState()
+    connectEnablers(settingsDiv)
+    document.getElementById("regextoggle").checked = storage.validURLRegex.length > 0
+    document.querySelector("[enabler='regextoggle']").enablerUpdate()
 }
 function connectInputsTo(div, object, callback) {
-    div.querySelectorAll("input").forEach(element => {
+    div.querySelectorAll("input.auto").forEach(element => {
         const dataKey = element.type == "checkbox" ? "checked" : "value"
         element[dataKey] = object[element.name]
         element.addEventListener("input", event => {
@@ -139,6 +136,17 @@ function connectInputsTo(div, object, callback) {
                 callback(event)
             }
         })
+    })
+}
+function connectEnablers(div) {
+    div.querySelectorAll("[enabler]").forEach(element => {
+        const source = document.getElementById(element.attributes.enabler.value)
+        function update() {
+            element.style.display = source.checked ? "block" : "none"
+        }
+        source.addEventListener("input", update)
+        element.enablerUpdate = update
+        update()
     })
 }
 

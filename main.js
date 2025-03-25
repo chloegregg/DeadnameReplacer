@@ -7,8 +7,9 @@ const storage = {
     changeInputs: false,
     constantUpdates: false,
     useHighlight: false,
-    validURLs: "^.*://.*$",
-    invalidURLs: "",
+    validURLRegex: "",
+    validURLList: "",
+    useBlacklist: false,
     highlightPattern: '',
     stylesheet: ``
 }
@@ -306,11 +307,13 @@ function main () {
     }
 }
 
-chrome.storage.local.get(["validURLs", "invalidURLs"]).then(result => {
-    if (result.validURLs && !new RegExp(result.validURLs).test(document.location.origin)) {
+chrome.storage.local.get(["validURLRegex", "validURLList", "useBlacklist"]).then(result => {
+    // if regex exists and matches the host
+    if (result.validURLRegex && !(result.useBlacklist ^ new RegExp("^" + result.validURLRegex + "$").test(document.location.host))) {
         return
     }
-    if (result.invalidURLs && new RegExp(result.invalidURLs).test(document.location.origin)) {
+    // if list exists and the host is in the list (or ends with something in the list)
+    if (result.validURLList && !(result.useBlacklist ^ result.validURLList.split(",").some(url => document.location.host.endsWith(url.trim())))) {
         return
     }
     main()
