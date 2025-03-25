@@ -124,9 +124,6 @@ function loadNames() {
 function loadSettings() {
     connectInputsTo(settingsDiv, storage)
     connectEnablers(settingsDiv)
-    document.getElementById("regextoggle").checked = storage.validURLRegex.length > 0
-    document.querySelector("[enabler='regextoggle']").enablerUpdate()
-    document.querySelector("[enabler='!regextoggle']").enablerUpdate()
 }
 function connectInputsTo(div, object, callback) {
     div.querySelectorAll("input.auto").forEach(element => {
