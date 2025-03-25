@@ -11,6 +11,7 @@ const storage = {
     validURLList: "",
     useBlacklist: false,
     useRegex: false,
+    enabled: true,
     highlightPattern: '',
     stylesheet: ``
 }
@@ -308,7 +309,10 @@ function main () {
     }
 }
 
-chrome.storage.local.get(["validURLRegex", "validURLList", "useBlacklist", "useRegex"]).then(result => {
+chrome.storage.local.get(["enabled", "validURLRegex", "validURLList", "useBlacklist", "useRegex"]).then(result => {
+    if (!result.enabled) {
+        return
+    }
     if (result.useRegex) {
         // if regex exists and matches the host
         if (result.validURLRegex && !(result.useBlacklist ^ new RegExp("^" + result.validURLRegex + "$").test(document.location.host))) {

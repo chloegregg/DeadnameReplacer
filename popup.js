@@ -11,6 +11,7 @@ const storage = {
     validURLList: "",
     useBlacklist: false,
     useRegex: false,
+    enabled: true,
     highlightPattern: '',
     stylesheet: ``
 }

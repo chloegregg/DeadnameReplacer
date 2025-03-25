@@ -11,6 +11,7 @@ const storage = {
     validURLList: "",
     useBlacklist: false,
     useRegex: false,
+    enabled: true,
     highlightPattern: '<span class="rainbow_text_animated">${name}</span>',
     stylesheet: `
     .rainbow_text_animated {
