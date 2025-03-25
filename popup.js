@@ -10,6 +10,7 @@ const storage = {
     validURLRegex: ".*",
     validURLList: "",
     useBlacklist: false,
+    useRegex: false,
     highlightPattern: '',
     stylesheet: ``
 }
@@ -140,9 +141,11 @@ function connectInputsTo(div, object, callback) {
 }
 function connectEnablers(div) {
     div.querySelectorAll("[enabler]").forEach(element => {
-        const source = document.getElementById(element.attributes.enabler.value)
+        const value = element.attributes.enabler.value
+        const invert = value.startsWith("!")
+        const source = document.getElementById(invert ? value.slice(1) : value)
         function update() {
-            element.style.display = source.checked ? "block" : "none"
+            element.style.display = source.checked ^ invert ? "block" : "none"
         }
         source.addEventListener("input", update)
         element.enablerUpdate = update

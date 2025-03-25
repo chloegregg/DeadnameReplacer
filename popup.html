@@ -36,13 +36,13 @@
                 <label for="stylesheet">Custom Stylesheet: </label>
                 <input name="stylesheet" type="text" class="auto">
             </div>
-            <div class="inputdiv" title="A comma separated list of hosts to filter URLs by, only applies to hosts that end with something in the list">
+            <div class="inputdiv" title="When enabled, will use a regular expression (regex) to filter out URLs">
+                <label for="useRegex">Use Regex: </label>
+                <input name="useRegex" type="checkbox" class="auto" id="regextoggle">
+            </div>
+            <div class="inputdiv" enabler="!regextoggle" title="A comma separated list of hosts to filter URLs by, only applies to hosts that end with something in the list">
                 <label for="validURLList">Host (site) filter: </label>
                 <input name="validURLList" type="text" class="auto">
-            </div>
-            <div class="inputdiv" title="When enabled, will also use a regular expression (regex) to filter out URLs">
-                <label for="useRegex">Use Regex: </label>
-                <input name="useRegex" type="checkbox" id="regextoggle">
             </div>
             <div class="inputdiv" enabler="regextoggle" title="Regular expression filtering for URLs, only applies to hosts that match the regex (e.g. '.*\.gov(\..+)?' applies on just hosts with .gov somewhere)">
                 <label for="validURLRegex">Host Regex: </label>
