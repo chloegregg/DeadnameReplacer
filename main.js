@@ -191,18 +191,20 @@ function fixElement(element, substitutions = regexedSubs) {
     // do children
     let child = element.firstChild
     while (child) {
-        changed ||= fixNode(child, substitutions)
-        child = child.nextSibling
+        const {
+            changed: childChanged,
+            next: nextnode
+        } = fixNode(child, substitutions)
+        changed ||= childChanged
+        child = nextnode
     }
     return changed
 }
 function fixNode(node, substitutions = regexedSubs) {
     if (node.nodeType == Node.TEXT_NODE) {
-        let changed = false
         if (storage.useHighlight) {
             const fixed = fixTextUsingElements(node.data, storage.highlightPattern, substitutions.flat())
             if (fixed[0] !== node.data) {
-                changed = true
                 node.after(...fixed)
                 allChanges.push({
                     type: "insert",
@@ -210,22 +212,39 @@ function fixNode(node, substitutions = regexedSubs) {
                     data: {original: node.data, fixed}
                 })
                 node.remove()
+                return {
+                    changed: true,
+                    next: fixed[fixed.length-2]?.nextSibling?.nextSibling
+                }
+            }
+            return {
+                changed: false,
+                next: node.nextSibling
             }
         } else {
             const fixed = fixText(node.data, substitutions.flat())
             if (fixed !== node.data) {
-                changed = true
                 allChanges.push({
                     type: "text",
                     node,
                     data: {original: node.data, fixed}
                 })
                 node.data = fixed
+                return {
+                    changed: true,
+                    next: node.nextSibling
+                }
+            }
+            return {
+                changed: false,
+                next: node.nextSibling
             }
         }
-        return changed
     }
-    return fixElement(node, substitutions)
+    return {
+        changed: fixElement(node, substitutions),
+        next: node.nextSibling
+    }
 }
 function fixTitle() {
     const title = document.querySelector("title")
@@ -233,12 +252,15 @@ function fixTitle() {
         const fixed = fixText(title.text, regexedSubs.flat())
         if (fixed != title.text) {
             title.text = fixed
+            return true
         }
     }
+    return false
 }
 function fixDocument() {
     let changed = fixElement(document.body)
-    fixTitle()
+    changed ||= fixTitle()
+    console.log("Changed:", changed)
     saveStorage()
     return changed
 }
