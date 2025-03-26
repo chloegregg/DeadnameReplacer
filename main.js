@@ -228,9 +228,12 @@ function fixNode(node, substitutions = regexedSubs) {
     return fixElement(node, substitutions)
 }
 function fixTitle() {
-    const fixed = fixText(document.title, regexedSubs.flat())
-    if (fixed != document.title) {
-        document.title = fixed
+    const title = document.querySelector("title")
+    if (title) {
+        const fixed = fixText(title.text, regexedSubs.flat())
+        if (fixed != title.text) {
+            title.text = fixed
+        }
     }
 }
 function fixDocument() {
