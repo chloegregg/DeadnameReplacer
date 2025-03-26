@@ -204,11 +204,12 @@ function fixNode(node, substitutions = regexedSubs) {
             if (fixed[0] !== node.data) {
                 changed = true
                 node.after(...fixed)
-                let original = node
-                for (let i = 0; i < fixed.length; i++) {
-                    node = node.nextSibling
-                }
-                original.remove()
+                allChanges.push({
+                    type: "insert",
+                    node: node.nextSibling,
+                    data: {original: node.data, fixed}
+                })
+                node.remove()
             }
         } else {
             const fixed = fixText(node.data, substitutions.flat())
@@ -241,7 +242,39 @@ function fixDocument() {
 function revertChanges() {
     for (const change of allChanges) {
         if (change.type == "text") {
-            change.node.data = change.data.original
+            if (change.node.data == change.data.fixed) {
+                change.node.data = change.data.original
+            }
+        } else if (change.type == "insert") {
+            const nodes = []
+            let node = change.node
+            let stillExists = true
+            for (let i = 0; i < change.data.fixed.length; i++) {
+                if (node === null) {
+                    stillExists = false
+                    break
+                }
+                if (node.nodeType == Node.TEXT_NODE) {
+                    if (node.data != change.data.fixed[i]) {
+                        stillExists = false
+                        break
+                    }
+                }
+                if (node.nodeType == Node.ELEMENT_NODE) {
+                    if (node != change.data.fixed[i]) {
+                        stillExists = false
+                        break
+                    }
+                }
+                nodes.push(node)
+                node = node.nextSibling
+            }
+            if (stillExists) {
+                change.node.before(change.data.original)
+                for (const node of nodes) {
+                    node.remove()
+                }
+            }
         }
     }
     allChanges = []
