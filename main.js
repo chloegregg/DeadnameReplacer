@@ -131,7 +131,6 @@ function fixTextUsingElements(text, pattern="${name}", substitutions) {
 }
 
 function fixElement(element, substitutions = regexedSubs) {
-    console.log("fixElement", element)
     if (element === null || (element.tagName && TAG_BLACKLIST.includes(element.tagName.toLowerCase()))) {
         return false
     }
@@ -168,21 +167,17 @@ function fixElement(element, substitutions = regexedSubs) {
     }
 
     // change attributes
-    console.log("Element", element)
     if (element.attributes !== undefined) {
-        console.log("Attributes", element.attributes)
         attrs: for (const at of Object.keys(element.attributes)) {
             if (element.attributes[at] === undefined) {
                 continue attrs
             }
-            console.log("Checking attribute", at)
             for (const attrRegex of ATTRIBUTE_BLACKLIST) {
                 if (at.match(attrRegex) !== null) {
                     continue attrs
                 }
             }
             const fixed = fixText(element.attributes[at].value, substitutions.flat())
-            console.log("Fixed", fixed)
             if (fixed !== element.attributes[at].value) {
                 changed = true
                 element.attributes[at].value = fixed
@@ -207,7 +202,6 @@ function fixElement(element, substitutions = regexedSubs) {
     return changed
 }
 function fixNode(node, substitutions = regexedSubs) {
-    console.log("Node", node)
     if (node.nodeType == Node.TEXT_NODE) {
         if (storage.useHighlight) {
             const fixed = fixTextUsingElements(node.data, storage.highlightPattern, substitutions.flat())
@@ -267,7 +261,6 @@ function fixTitle() {
 function fixDocument() {
     let changed = fixElement(document.body)
     changed ||= fixTitle()
-    console.log("Changed:", changed)
     saveStorage()
     return changed
 }
