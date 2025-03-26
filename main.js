@@ -131,12 +131,13 @@ function fixTextUsingElements(text, pattern="${name}", substitutions) {
 }
 
 function fixElement(element, substitutions = regexedSubs) {
+    console.log("fixElement", element)
     if (element === null || (element.tagName && TAG_BLACKLIST.includes(element.tagName.toLowerCase()))) {
         return false
     }
-    const html = element.innerHTML
+    let html = element.innerHTML
     if (!html) {
-        return false
+        html = ""
     }
     let changed = false
     let containsInput = false
@@ -156,36 +157,41 @@ function fixElement(element, substitutions = regexedSubs) {
             }
         }
     }
-    if (!(storage.changeInputs && containsInput)) {
-        substitutions = [...substitutions]
-        for (let i = 0; i < substitutions.length; i++) {
-            if (html.match(substitutions[i][substitutions[i].length-1][0]) === null) {
-                substitutions.splice(i, 1)
+    const childSubs = [...substitutions]
+    if (!containsInput) {
+        for (let i = 0; i < childSubs.length; i++) {
+            if (html.match(childSubs[i][childSubs[i].length-1][0]) === null) {
+                childSubs.splice(i, 1)
                 i--
             }
-        }
-        if (substitutions.length == 0) {
-            return false
         }
     }
 
     // change attributes
+    console.log("Element", element)
     if (element.attributes !== undefined) {
+        console.log("Attributes", element.attributes)
         attrs: for (const at of Object.keys(element.attributes)) {
             if (element.attributes[at] === undefined) {
                 continue attrs
             }
+            console.log("Checking attribute", at)
             for (const attrRegex of ATTRIBUTE_BLACKLIST) {
                 if (at.match(attrRegex) !== null) {
                     continue attrs
                 }
             }
             const fixed = fixText(element.attributes[at].value, substitutions.flat())
+            console.log("Fixed", fixed)
             if (fixed !== element.attributes[at].value) {
                 changed = true
                 element.attributes[at].value = fixed
             }
         }
+    }
+
+    if (childSubs.length == 0) {
+        return false
     }
 
     // do children
@@ -194,13 +200,14 @@ function fixElement(element, substitutions = regexedSubs) {
         const {
             changed: childChanged,
             next: nextnode
-        } = fixNode(child, substitutions)
+        } = fixNode(child, childSubs)
         changed ||= childChanged
         child = nextnode
     }
     return changed
 }
 function fixNode(node, substitutions = regexedSubs) {
+    console.log("Node", node)
     if (node.nodeType == Node.TEXT_NODE) {
         if (storage.useHighlight) {
             const fixed = fixTextUsingElements(node.data, storage.highlightPattern, substitutions.flat())
