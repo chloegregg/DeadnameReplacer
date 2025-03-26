@@ -198,6 +198,7 @@ function fixElement(element, substitutions = regexedSubs) {
 }
 function fixNode(node, substitutions = regexedSubs) {
     if (node.nodeType == Node.TEXT_NODE) {
+        let changed = false
         if (storage.useHighlight) {
             const fixed = fixTextUsingElements(node.data, storage.highlightPattern, substitutions.flat())
             if (fixed[0] !== node.data) {
@@ -221,6 +222,7 @@ function fixNode(node, substitutions = regexedSubs) {
                 node.data = fixed
             }
         }
+        return changed
     }
     return fixElement(node, substitutions)
 }
