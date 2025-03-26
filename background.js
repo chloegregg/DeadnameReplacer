@@ -263,6 +263,29 @@ function main() {
         if (command == "toggle") {
             storage.enabled = !storage.enabled
             saveStorage()
+        } else if (command == "toggle-page") {
+            chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+                if (tabs[0]) {
+                    const tab = tabs[0]
+                    const url = new URL(tab.url)
+                    const host = url.host
+                    const currentList = storage.validURLList.split(",").map(u => u.trim())
+                    let found = false
+                    for (let i = 0; i < currentList.length; i++) {
+                        if (host.endsWith(currentList[i])) {
+                            currentList.splice(i, 1)
+                            i--
+                            found = true
+                        }
+                    }
+                    if (!found) {
+                        currentList.push(host)
+                    }
+                    storage.validURLList = currentList.join(", ")
+                    storage.useRegex = false
+                    saveStorage()
+                }
+            })
         }
     })
 }

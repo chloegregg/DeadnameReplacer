@@ -24,7 +24,7 @@
         "default_popup": "popup.html"
     },
     "permissions": [
-        "storage", "contextMenus"
+        "storage", "contextMenus", "tabs"
     ],
     "background": {
         "service_worker": "background.js"
@@ -32,9 +32,15 @@
     "commands": {
         "toggle": {
             "suggested_key": {
-                "default": "Ctrl+Shift+Q"
+                "default": "Alt+Shift+Q"
             },
             "description": "Toggle Deadname Replacer Globally"
+        },
+        "toggle-page": {
+            "suggested_key": {
+                "default": "Alt+Q"
+            },
+            "description": "Toggle Deadname Replacer on this domain"
         }
     }
 }
