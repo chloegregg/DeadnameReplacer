@@ -40,7 +40,7 @@
             "suggested_key": {
                 "default": "Alt+Q"
             },
-            "description": "Toggle Deadname Replacer on this domain"
+            "description": "Toggle Deadname Replacer on this domain, (list filter mode)"
         }
     }
 }
