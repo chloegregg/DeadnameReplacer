@@ -45,6 +45,7 @@ const storageEvent = {
 }
 let runOnce = false
 let currentlyEnabled = false
+let allChanges = []
 
 function loadStorage() {
     return chrome.storage.local.get().then(value => {
@@ -212,6 +213,11 @@ function fixNode(node, substitutions = regexedSubs) {
             const fixed = fixText(node.data, substitutions.flat())
             if (fixed !== node.data) {
                 changed = true
+                allChanges.push({
+                    type: "text",
+                    node,
+                    data: {original: node.data, fixed}
+                })
                 node.data = fixed
             }
         }
@@ -229,6 +235,14 @@ function fixDocument() {
     fixTitle()
     saveStorage()
     return changed
+}
+function revertChanges() {
+    for (const change of allChanges) {
+        if (change.type == "text") {
+            change.node.data = change.data.original
+        }
+    }
+    allChanges = []
 }
 
 // observe changes in tree
@@ -290,6 +304,7 @@ function enable() {
 function disable() {
     currentlyEnabled = false
     stopObserving()
+    revertChanges()
 }
 function checkForEnable() {
     if (!storage.enabled) {
