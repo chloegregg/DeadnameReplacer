@@ -329,13 +329,6 @@ function main () {
     storageEvent.addListener("stylesheet", () => {
         stylesheet.textContent = storage.stylesheet
     }, true)
-    // fix anything that appeared before the script started
-    fixDocument()
-    const initInterval = setInterval(fixDocument)
-    window.addEventListener("load", () => {
-        clearInterval(initInterval)
-        fixDocument()
-    })
     storageEvent.addListener("constantUpdates", () => {
         if (storage.constantUpdates) {
             constantUpdateInterval = setInterval(fixDocument, 1000)
