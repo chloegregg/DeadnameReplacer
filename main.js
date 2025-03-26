@@ -248,13 +248,15 @@ function fixNode(node, substitutions = regexedSubs) {
     }
 }
 function fixTitle() {
-    const title = document.querySelector("title")
-    if (title) {
-        const fixed = fixText(title.text, regexedSubs.flat())
-        if (fixed != title.text) {
-            title.text = fixed
-            return true
-        }
+    const fixed = fixText(document.title, regexedSubs.flat())
+    if (fixed != document.title) {
+        allChanges.push({
+            type: "title",
+            node: document.title,
+            data: {original: document.title, fixed}
+        })
+        document.title = fixed
+        return true
     }
     return false
 }
@@ -299,6 +301,10 @@ function revertChanges() {
                 for (const node of nodes) {
                     node.remove()
                 }
+            }
+        } else if (change.type == "title") {
+            if (document.title == change.data.fixed) {
+                document.title = change.data.original
             }
         }
     }
