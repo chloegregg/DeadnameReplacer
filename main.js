@@ -25,7 +25,10 @@ const storageEvent = {
             callback()
         }
     },
-    addListener(property, callback) {
+    addListener(property, callback, runNow = false) {
+        if (runNow) {
+            callback()
+        }
         if (property instanceof Array) {
             property.forEach(p => {
                 this.addListener(p, callback)
@@ -40,6 +43,8 @@ const storageEvent = {
     _listeners: {},
     loaded: false
 }
+let runOnce = false
+let currentlyEnabled = false
 
 function loadStorage() {
     return chrome.storage.local.get().then(value => {
@@ -226,21 +231,86 @@ function fixDocument() {
     return changed
 }
 
-// init code
-function main () {
+// observe changes in tree
+const bodyObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        if (mutation.type === "characterData") {
+            fixNode(mutation.target)
+        } else if (mutation.type === "attributes") {
+            fixElement(mutation.target.parentElement)
+        } else if (mutation.type === "childList") {
+            for (let i = 0; i < mutation.addedNodes.length; i++) {
+                fixNode(mutation.addedNodes[i])
+            }
+        }
+    })
+    if (mutations.length > 0) {
+        saveStorage()
+    }
+})
+// observe title
+const titleObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        fixTitle()
+        saveStorage()
+    })
+})
+function startObserving() {
+    bodyObserver.observe(document.body, {
+        childList: true,
+        attributes: true,
+        subtree: true,
+        characterData: true
+    })
+    if (title = document.querySelector("title")) {
+        titleObserver.observe(title, {
+            childList: true
+        })
+    }
+}
+function stopObserving() {
+    bodyObserver.disconnect()
+    titleObserver.disconnect()
+}
+
+let constantUpdateInterval
+function enable() {
     if (document.body === null) {
         // iframe from another origin or something
         return
     }
+    currentlyEnabled = true
+    if (!runOnce) {
+        runOnce = true
+        main()
+    }
+    fixDocument()
+    startObserving()
+}
+function disable() {
+    currentlyEnabled = false
+    stopObserving()
+}
+function checkForEnable() {
+    if (!storage.enabled) {
+        return false
+    }
+    if (storage.useRegex) {
+        // if regex exists and matches the host
+        if (storage.validURLRegex && !(storage.useBlacklist ^ new RegExp("^" + storage.validURLRegex + "$").test(document.location.host))) {
+            return false
+        }
+    } else {
+        // if list exists and the host is in the list (or ends with something in the list)
+        if (storage.validURLList && !(storage.useBlacklist ^ storage.validURLList.split(",").some(url => document.location.host.endsWith(url.trim())))) {
+            return false
+        }
+    }
+    return true
+}
 
-    loadStorage().then(() => {
-        chrome.storage.onChanged.addListener((changes, namespace) => {
-            for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-                storage[key] = newValue
-                storageEvent.update(key)
-            }
-        })
-    })
+// init code
+function main () {
     storageEvent.addListener("substitutions", () => {
         regexedSubs = []
         for (let i = 0; i < storage.substitutions.length; i++) {
@@ -251,14 +321,14 @@ function main () {
             regexedSubs.push(patternSubs)
         }
         fixDocument()
-    })
-    storageEvent.addListener("count", updateCount)
-
+    }, true)
+    storageEvent.addListener("count", updateCount, true)
+    
     const stylesheet = document.createElement("style")
     document.head.appendChild(stylesheet)
     storageEvent.addListener("stylesheet", () => {
         stylesheet.textContent = storage.stylesheet
-    })
+    }, true)
     // fix anything that appeared before the script started
     fixDocument()
     const initInterval = setInterval(fixDocument)
@@ -266,63 +336,27 @@ function main () {
         clearInterval(initInterval)
         fixDocument()
     })
-    let constantUpdateInterval
     storageEvent.addListener("constantUpdates", () => {
         if (storage.constantUpdates) {
             constantUpdateInterval = setInterval(fixDocument, 1000)
         } else if (constantUpdateInterval) {
             clearInterval(constantUpdateInterval)
         }
-    })
-    // observe changes in tree
-    new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-            if (mutation.type === "characterData") {
-                fixNode(mutation.target)
-            } else if (mutation.type === "attributes") {
-                fixElement(mutation.target.parentElement)
-            } else if (mutation.type === "childList") {
-                for (let i = 0; i < mutation.addedNodes.length; i++) {
-                    fixNode(mutation.addedNodes[i])
-                }
-            }
-        })
-        if (mutations.length > 0) {
-            saveStorage()
-        }
-    }).observe(document.body, {
-        childList: true,
-        attributes: true,
-        subtree: true,
-        characterData: true
-    })
-    // observe title
-    if (title = document.querySelector("title")) {
-        new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                fixTitle()
-                saveStorage()
-            })
-        }).observe(title, {
-            childList: true
-        })
-    }
+    }, true)
 }
-
-chrome.storage.local.get(["enabled", "validURLRegex", "validURLList", "useBlacklist", "useRegex"]).then(result => {
-    if (!result.enabled) {
-        return
-    }
-    if (result.useRegex) {
-        // if regex exists and matches the host
-        if (result.validURLRegex && !(result.useBlacklist ^ new RegExp("^" + result.validURLRegex + "$").test(document.location.host))) {
-            return
+loadStorage().then(() => {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+            storage[key] = newValue
+            storageEvent.update(key)
         }
-    } else {
-        // if list exists and the host is in the list (or ends with something in the list)
-        if (result.validURLList && !(result.useBlacklist ^ result.validURLList.split(",").some(url => document.location.host.endsWith(url.trim())))) {
-            return
+    })
+    storageEvent.addListener(["enabled", "validURLRegex", "validURLList", "useBlacklist", "useRegex"], () => {
+        let shouldEnable = checkForEnable()
+        if (shouldEnable && !currentlyEnabled) {
+            enable()
+        } else if (!shouldEnable && currentlyEnabled) {
+            disable()
         }
-    }
-    main()
+    }, true)
 })

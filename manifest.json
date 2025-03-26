@@ -28,5 +28,13 @@
     ],
     "background": {
         "service_worker": "background.js"
+    },
+    "commands": {
+        "toggle": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+Q"
+            },
+            "description": "Toggle Deadname Replacer Globally"
+        }
     }
 }

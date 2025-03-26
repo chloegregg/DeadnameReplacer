@@ -259,5 +259,11 @@ function main() {
             parseAndAddDeadname(info.selectionText)
         }
     })
+    chrome.commands.onCommand.addListener(command => {
+        if (command == "toggle") {
+            storage.enabled = !storage.enabled
+            saveStorage()
+        }
+    })
 }
 main()
