@@ -112,7 +112,8 @@ function listenToNewDead(element, index) {
             createNewDead(index + 1)
             created = true
         }
-    })
+        saveStorage()
+    }, "deadnames")
 }
 
 function loadNames() {
@@ -120,22 +121,33 @@ function loadNames() {
         dn.remove()
     }
     createNewDead()
-    connectInputsTo(chosennameDiv, storage.chosenname)
+    connectInputsTo(chosennameDiv, storage.chosenname, saveStorage, "chosenname")
 }
 function loadSettings() {
-    connectInputsTo(settingsDiv, storage)
+    connectInputsTo(settingsDiv, storage, saveStorage, true)
     connectEnablers(settingsDiv)
 }
-function connectInputsTo(div, object, callback) {
-    div.querySelectorAll("input.auto").forEach(element => {
+function connectInputsTo(div, object, callback, eventSource) {
+    div.querySelectorAll(".auto").forEach(element => {
         const dataKey = element.type == "checkbox" ? "checked" : "value"
         element[dataKey] = object[element.name]
-        element.addEventListener("input", event => {
+        element.addEventListener("change", event => {
             object[element.name] = element[dataKey]
             if (callback) {
                 callback(event)
             }
         })
+        let field = null
+        if (typeof eventSource === "string") {
+            field = eventSource
+        } else if (eventSource) {
+            field = element.name
+        }
+        if (field) {
+            storageEvent.addListener(field, () => {
+                element[dataKey] = object[element.name]
+            })
+        }
     })
 }
 function connectEnablers(div) {
@@ -146,7 +158,7 @@ function connectEnablers(div) {
         function update() {
             element.style.display = source.checked ^ invert ? "block" : "none"
         }
-        source.addEventListener("input", update)
+        source.addEventListener("change", update)
         element.enablerUpdate = update
         update()
     })
