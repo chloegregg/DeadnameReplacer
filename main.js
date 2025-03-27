@@ -60,8 +60,10 @@ function saveStorage() {
     if (storageEvent.loaded) {
         const updated = {}
         for (const key of Object.keys(storage)) {
-            if (storage[key] !== currentSavedStorage[key]) {
-                updated[key] = currentSavedStorage[key] = storage[key]
+            const str = JSON.stringify(storage[key])
+            if (str !== currentSavedStorage[key]) {
+                updated[key] = storage[key]
+                currentSavedStorage[key] = str
             }
         }
         chrome.storage.local.set(updated)

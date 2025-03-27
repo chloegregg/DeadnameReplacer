@@ -25,7 +25,10 @@ const storageEvent = {
             callback()
         }
     },
-    addListener(property, callback) {
+    addListener(property, callback, runNow = false) {
+        if (runNow) {
+            callback()
+        }
         if (property instanceof Array) {
             property.forEach(p => {
                 this.addListener(p, callback)
@@ -58,8 +61,10 @@ function saveStorage() {
     if (storageEvent.loaded) {
         const updated = {}
         for (const key of Object.keys(storage)) {
-            if (storage[key] !== currentSavedStorage[key]) {
-                updated[key] = currentSavedStorage[key] = storage[key]
+            const str = JSON.stringify(storage[key])
+            if (str !== currentSavedStorage[key]) {
+                updated[key] = storage[key]
+                currentSavedStorage[key] = str
             }
         }
         chrome.storage.local.set(updated)
@@ -107,7 +112,7 @@ function listenToNewDead(element, index) {
         createNewDead(index + 1)
         created = true
     }
-    connectInputsTo(element, storage.deadnames[index], event => {
+    connectInputsTo(element, () => storage.deadnames[index], event => {
         if (!created) {
             createNewDead(index + 1)
             created = true
@@ -121,18 +126,18 @@ function loadNames() {
         dn.remove()
     }
     createNewDead()
-    connectInputsTo(chosennameDiv, storage.chosenname, saveStorage, "chosenname")
+    connectInputsTo(chosennameDiv, () => storage.chosenname, saveStorage, "chosenname")
 }
 function loadSettings() {
-    connectInputsTo(settingsDiv, storage, saveStorage, true)
+    connectInputsTo(settingsDiv, () => storage, saveStorage, true)
     connectEnablers(settingsDiv)
 }
-function connectInputsTo(div, object, callback, eventSource) {
+function connectInputsTo(div, objectGetter, callback, eventSource) {
     div.querySelectorAll(".auto").forEach(element => {
         const dataKey = element.type == "checkbox" ? "checked" : "value"
-        element[dataKey] = object[element.name]
+        element[dataKey] = objectGetter()[element.name]
         element.addEventListener("change", event => {
-            object[element.name] = element[dataKey]
+            objectGetter()[element.name] = element[dataKey]
             if (callback) {
                 callback(event)
             }
@@ -145,7 +150,7 @@ function connectInputsTo(div, object, callback, eventSource) {
         }
         if (field) {
             storageEvent.addListener(field, () => {
-                element[dataKey] = object[element.name]
+                element[dataKey] = objectGetter()[element.name]
             })
         }
     })

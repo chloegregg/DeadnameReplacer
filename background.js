@@ -43,7 +43,10 @@ const storageEvent = {
             callback()
         }
     },
-    addListener(property, callback) {
+    addListener(property, callback, runNow = false) {
+        if (runNow) {
+            callback()
+        }
         if (property instanceof Array) {
             property.forEach(p => {
                 this.addListener(p, callback)
@@ -77,8 +80,10 @@ function saveStorage() {
     if (storageEvent.loaded) {
         const updated = {}
         for (const key of Object.keys(storage)) {
-            if (storage[key] !== currentSavedStorage[key]) {
-                updated[key] = currentSavedStorage[key] = storage[key]
+            const str = JSON.stringify(storage[key])
+            if (str !== currentSavedStorage[key]) {
+                updated[key] = storage[key]
+                currentSavedStorage[key] = str
             }
         }
         chrome.storage.local.set(updated)
@@ -207,7 +212,6 @@ function getSubstitution(bad, good) {
 }
 function parseAndAddDeadname(text) {
     const names = text.matchAll(WORD_REGEX).map(match => match[0]).toArray()
-    console.log(names)
     if (names.length == 1) {
         storage.deadnames.push({first: names[0], middle: "", last: "", honorific: ""})
     } else {
