@@ -170,7 +170,6 @@ function connectEnablers(div) {
 }
 
 function main() {
-    document.getElementById("save").addEventListener("click", saveStorage)
     loadStorage().then(() => {
         chrome.storage.onChanged.addListener((changes, namespace) => {
             for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
